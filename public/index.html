@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server Game - Line 98 & Cờ Caro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .nav {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .nav button {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 1.1em;
+            transition: all 0.3s;
+        }
+
+        .nav button:hover {
+            background: #e9ecef;
+        }
+
+        .nav button.active {
+            background: #007bff;
+            color: white;
+        }
+
+        .content {
+            padding: 30px;
+            min-height: 600px;
+        }
+
+        .game-section {
+            display: none;
+        }
+
+        .game-section.active {
+            display: block;
+        }
+
+        .auth-section {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+
+        .btn {
+            background: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background 0.3s;
+            margin-right: 10px;
+        }
+
+        .btn:hover {
+            background: #0056b3;
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+
+        .btn-success:hover {
+            background: #1e7e34;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn-warning:hover {
+            background: #e0a800;
+        }
+
+        .user-info {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .user-info.show {
+            display: block;
+        }
+
+        .game-board {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .game-controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .game-controls button {
+            margin: 0 10px;
+        }
+
+        .status {
+            text-align: center;
+            font-size: 1.2em;
+            margin: 20px 0;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .status.waiting {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status.playing {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.game-over {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Line 98 specific styles */
+        #line98-board {
+            display: grid;
+            grid-template-columns: repeat(9, 50px);
+            grid-template-rows: repeat(9, 50px);
+            gap: 2px;
+            background: #333;
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        .line98-cell {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .line98-cell:hover {
+            transform: scale(1.1);
+        }
+
+        .line98-cell.selected {
+            border-color: #ff6b6b;
+            transform: scale(1.2);
+        }
+
+        .line98-cell.color-1 { background: #ff6b6b; }
+        .line98-cell.color-2 { background: #4ecdc4; }
+        .line98-cell.color-3 { background: #45b7d1; }
+        .line98-cell.color-4 { background: #96ceb4; }
+        .line98-cell.color-5 { background: #feca57; }
+        .line98-cell.empty { background: #ddd; }
+
+        /* Caro specific styles */
+        #caro-board {
+            display: grid;
+            grid-template-columns: repeat(15, 30px);
+            grid-template-rows: repeat(15, 30px);
+            gap: 1px;
+            background: #333;
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        .caro-cell {
+            width: 30px;
+            height: 30px;
+            background: white;
+            border: 1px solid #ccc;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        .caro-cell:hover {
+            background: #f0f0f0;
+        }
+
+        .caro-cell.player1 {
+            color: #ff6b6b;
+        }
+
+        .caro-cell.player2 {
+            color: #4ecdc4;
+        }
+
+        .score {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #333;
+            margin: 20px 0;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            #line98-board {
+                grid-template-columns: repeat(9, 40px);
+                grid-template-rows: repeat(9, 40px);
+            }
+            
+            .line98-cell {
+                width: 40px;
+                height: 40px;
+                font-size: 1.2em;
+            }
+            
+            #caro-board {
+                grid-template-columns: repeat(15, 25px);
+                grid-template-rows: repeat(15, 25px);
+            }
+            
+            .caro-cell {
+                width: 25px;
+                height: 25px;
+                font-size: 1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎮 Server Game</h1>
+            <p>Line 98 & Cờ Caro X O</p>
+        </div>
+
+        <div class="nav">
+            <button id="auth-tab" class="active">Đăng nhập</button>
+            <button id="line98-tab">Line 98</button>
+            <button id="caro-tab">Cờ Caro</button>
+        </div>
+
+        <div class="content">
+            <!-- Authentication Section -->
+            <div id="auth-section" class="game-section active">
+                <div class="auth-section">
+                    <div id="login-form">
+                        <h2>Đăng nhập</h2>
+                        <div class="form-group">
+                            <label for="login-username">Tên đăng nhập:</label>
+                            <input type="text" id="login-username" placeholder="Nhập tên đăng nhập">
+                        </div>
+                        <div class="form-group">
+                            <label for="login-password">Mật khẩu:</label>
+                            <input type="password" id="login-password" placeholder="Nhập mật khẩu">
+                        </div>
+                        <button class="btn" onclick="login()">Đăng nhập</button>
+                        <button class="btn btn-success" onclick="showRegisterForm()">Đăng ký</button>
+                    </div>
+
+                    <div id="register-form" class="hidden">
+                        <h2>Đăng ký</h2>
+                        <div class="form-group">
+                            <label for="register-username">Tên đăng nhập:</label>
+                            <input type="text" id="register-username" placeholder="Nhập tên đăng nhập">
+                        </div>
+                        <div class="form-group">
+                            <label for="register-password">Mật khẩu:</label>
+                            <input type="password" id="register-password" placeholder="Nhập mật khẩu">
+                        </div>
+                        <div class="form-group">
+                            <label for="register-email">Email (tùy chọn):</label>
+                            <input type="email" id="register-email" placeholder="Nhập email">
+                        </div>
+                        <div class="form-group">
+                            <label for="register-nickname">Nickname (tùy chọn):</label>
+                            <input type="text" id="register-nickname" placeholder="Nhập nickname">
+                        </div>
+                        <button class="btn btn-success" onclick="register()">Đăng ký</button>
+                        <button class="btn" onclick="showLoginForm()">Đăng nhập</button>
+                    </div>
+
+                    <div id="user-info" class="user-info">
+                        <h3>Thông tin người dùng</h3>
+                        <p><strong>Tên đăng nhập:</strong> <span id="user-username"></span></p>
+                        <p><strong>Email:</strong> <span id="user-email"></span></p>
+                        <p><strong>Nickname:</strong> <span id="user-nickname"></span></p>
+                        <button class="btn btn-danger" onclick="logout()">Đăng xuất</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Line 98 Section -->
+            <div id="line98-section" class="game-section">
+                <h2>🎯 Line 98</h2>
+                <div class="score">Điểm: <span id="line98-score">0</span></div>
+                <div class="game-board">
+                    <div id="line98-board"></div>
+                </div>
+                <div class="game-controls">
+                    <button class="btn" onclick="newLine98Game()">Trò chơi mới</button>
+                    <button class="btn btn-warning" onclick="getHint()">Gợi ý</button>
+                </div>
+                <div id="line98-status" class="status"></div>
+            </div>
+
+            <!-- Caro Section -->
+            <div id="caro-section" class="game-section">
+                <h2>⭕ Cờ Caro X O</h2>
+                <div class="game-board">
+                    <div id="caro-board"></div>
+                </div>
+                <div class="game-controls">
+                    <button class="btn" onclick="createCaroGame()">Tạo phòng</button>
+                    <button class="btn btn-success" onclick="findCaroMatch()">Tìm trận</button>
+                    <button class="btn btn-warning" onclick="joinCaroGame()">Tham gia phòng</button>
+                </div>
+                <div id="caro-status" class="status"></div>
+                <div id="caro-game-id" class="hidden">
+                    <label for="game-id-input">ID phòng:</label>
+                    <input type="number" id="game-id-input" placeholder="Nhập ID phòng">
+                    <button class="btn" onclick="joinGameById()">Tham gia</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
