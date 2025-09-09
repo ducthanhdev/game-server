@@ -1707,12 +1707,166 @@ function initializeCaroGame() {
         
         if (row >= 0 && row < 15 && col >= 0 && col < 15 && board[row][col] === 0) {
             board[row][col] = currentPlayer;
-            currentPlayer = currentPlayer === 1 ? 2 : 1;
+            
+            // Draw the board first to show the last move
             drawBoard();
+            
+            // Check for win
+            if (checkWin(row, col, currentPlayer)) {
+                gameOver = true;
+                const winner = currentPlayer === 1 ? 'X' : 'O';
+                const winnerColor = currentPlayer === 1 ? 'Đỏ' : 'Xanh';
+                showSuccess(`🎉 Người chơi ${winner} (${winnerColor}) đã thắng!`);
+                document.getElementById('caroStatus').textContent = `🎉 ${winner} (${winnerColor}) thắng!`;
+                
+                // Highlight winning line after a short delay
+                setTimeout(() => {
+                    highlightWinningLine(row, col, currentPlayer);
+                }, 100);
+                return;
+            }
+            
+            // Check for draw
+            if (isBoardFull()) {
+                gameOver = true;
+                showWarning('🤝 Hòa! Bàn cờ đã đầy.');
+                document.getElementById('caroStatus').textContent = '🤝 Hòa!';
+                return;
+            }
+            
+            currentPlayer = currentPlayer === 1 ? 2 : 1;
             document.getElementById('caroStatus').textContent = 
                 `Lượt chơi: ${currentPlayer === 1 ? 'X' : 'O'}`;
         }
     });
+    
+    // Check if a player has won
+    function checkWin(row, col, player) {
+        const directions = [
+            [0, 1],   // horizontal
+            [1, 0],   // vertical
+            [1, 1],   // diagonal \
+            [1, -1]   // diagonal /
+        ];
+        
+        for (const [dr, dc] of directions) {
+            let count = 1; // Count the current piece
+            
+            // Check in positive direction
+            let r = row + dr;
+            let c = col + dc;
+            while (r >= 0 && r < 15 && c >= 0 && c < 15 && board[r][c] === player) {
+                count++;
+                r += dr;
+                c += dc;
+            }
+            
+            // Check in negative direction
+            r = row - dr;
+            c = col - dc;
+            while (r >= 0 && r < 15 && c >= 0 && c < 15 && board[r][c] === player) {
+                count++;
+                r -= dr;
+                c -= dc;
+            }
+            
+            if (count >= 5) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    // Check if board is full (draw)
+    function isBoardFull() {
+        for (let i = 0; i < 15; i++) {
+            for (let j = 0; j < 15; j++) {
+                if (board[i][j] === 0) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    
+    // Highlight the winning line
+    function highlightWinningLine(row, col, player) {
+        const directions = [
+            [0, 1],   // horizontal
+            [1, 0],   // vertical
+            [1, 1],   // diagonal \
+            [1, -1]   // diagonal /
+        ];
+        
+        for (const [dr, dc] of directions) {
+            let count = 1;
+            let winningCells = [[row, col]];
+            
+            // Check in positive direction
+            let r = row + dr;
+            let c = col + dc;
+            while (r >= 0 && r < 15 && c >= 0 && c < 15 && board[r][c] === player) {
+                count++;
+                winningCells.push([r, c]);
+                r += dr;
+                c += dc;
+            }
+            
+            // Check in negative direction
+            r = row - dr;
+            c = col - dc;
+            while (r >= 0 && r < 15 && c >= 0 && c < 15 && board[r][c] === player) {
+                count++;
+                winningCells.unshift([r, c]);
+                r -= dr;
+                c -= dc;
+            }
+            
+            if (count >= 5) {
+                // Draw highlight for winning line
+                const cellSize = 40;
+                
+                // Draw a thicker background line
+                ctx.strokeStyle = '#FFD700';
+                ctx.lineWidth = 8;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                
+                for (let i = 0; i < Math.min(5, winningCells.length); i++) {
+                    const [r, c] = winningCells[i];
+                    const x = c * cellSize + cellSize / 2;
+                    const y = r * cellSize + cellSize / 2;
+                    
+                    if (i === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                }
+                ctx.stroke();
+                
+                // Draw a thinner bright line on top
+                ctx.strokeStyle = '#FFFF00';
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                
+                for (let i = 0; i < Math.min(5, winningCells.length); i++) {
+                    const [r, c] = winningCells[i];
+                    const x = c * cellSize + cellSize / 2;
+                    const y = r * cellSize + cellSize / 2;
+                    
+                    if (i === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                }
+                ctx.stroke();
+                break;
+            }
+        }
+    }
     
     // Game controls
     document.getElementById('findMatchBtn').addEventListener('click', () => {
@@ -1726,6 +1880,20 @@ function initializeCaroGame() {
     document.getElementById('joinGameBtn').addEventListener('click', () => {
         const gameId = prompt('Nhập ID phòng game:');
         if (gameId) showSuccess(`Đã tham gia phòng ${gameId}`);
+    });
+    
+    // New game button
+    document.getElementById('newCaroGameBtn').addEventListener('click', () => {
+        // Reset game state
+        board = Array(15).fill().map(() => Array(15).fill(0));
+        currentPlayer = 1;
+        gameOver = false;
+        
+        // Redraw board
+        drawBoard();
+        document.getElementById('caroStatus').textContent = 'Lượt chơi: X';
+        
+        showSuccess('🎮 Game mới đã bắt đầu!');
     });
     
     drawBoard();
