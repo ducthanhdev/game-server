@@ -4,6 +4,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 import * as express from 'express';
+import { IoAdapter } from '@nestjs/platform-socket.io';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -13,6 +14,9 @@ async function bootstrap() {
     origin: true,
     credentials: true,
   });
+  
+  // Configure Socket.IO
+  app.useWebSocketAdapter(new IoAdapter(app));
   
   // Serve static files
   app.use(express.static(join(__dirname, '..', 'public')));

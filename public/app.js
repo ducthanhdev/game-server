@@ -218,27 +218,15 @@ function handleLogout() {
     showAuthScreen();
 }
 
-// Socket initialization
+// Socket initialization - Disabled for now
 function initializeSocket() {
-    if (socket) socket.disconnect();
-    const token = localStorage.getItem('token');
-    socket = io({ auth: { token } });
-
-    socket.on('connect', () => console.log('Connected to server'));
-    socket.on('disconnect', () => console.log('Disconnected from server'));
-    
-    // Game events
-    socket.on('gameState', (state) => {
-        gameState = state;
-        updateGameDisplay();
-    });
-    
-    socket.on('gameOver', (data) => {
-        showSuccess(`Game Over! ${data.score ? `Điểm: ${data.score}` : ''}`);
-    });
+    // Socket.IO disabled for now - using local game only
+    console.log('Socket.IO disabled - using local game only');
+    socket = null;
 }
 
 // Game functions
+
 function initializeLine98Game() {
     const canvas = document.getElementById('line98Canvas');
     const ctx = canvas.getContext('2d');
@@ -246,13 +234,22 @@ function initializeLine98Game() {
     // Game constants
     const ROWS = 9, COLS = 9, K = 7, LINE = 5, SPAWN = 3;
     
-    // Game state
-    let board = Array(ROWS).fill().map(() => Array(COLS).fill(0));
+    // Game state - Initialize immediately and verify
+    let board = [];
+    for (let i = 0; i < ROWS; i++) {
+        board[i] = [];
+        for (let j = 0; j < COLS; j++) {
+            board[i][j] = 0;
+        }
+    }
     let score = 0;
     let selectedBall = null;
     let isGameOver = false;
     let nextBalls = [];
     let usePreview = true;
+    
+    console.log('Board initialized:', board);
+    console.log('Board length:', board.length, 'First row length:', board[0]?.length);
     
     // Animation state
     let animatingCells = new Set();
@@ -261,6 +258,57 @@ function initializeLine98Game() {
     let movingBall = null;
     let pathPreview = [];
     let animationFrame = 0;
+    
+    // Initialize board function - moved up for hoisting
+    function initBoard() {
+        console.log('initBoard called, board:', board);
+        console.log('ROWS:', ROWS, 'COLS:', COLS);
+        
+        // Ensure board is properly initialized
+        if (!board || !Array.isArray(board) || board.length !== ROWS) {
+            console.log('Reinitializing board...');
+            board = [];
+            for (let i = 0; i < ROWS; i++) {
+                board[i] = [];
+                for (let j = 0; j < COLS; j++) {
+                    board[i][j] = 0;
+                }
+            }
+        }
+        
+        // Clear board
+        for (let i = 0; i < ROWS; i++) {
+            for (let j = 0; j < COLS; j++) {
+                board[i][j] = 0;
+            }
+        }
+        
+        console.log('Board cleared, spawning balls...');
+        
+        // Spawn initial balls (5-7 balls)
+        const initialCount = 5 + randInt(3);
+        console.log('Spawning', initialCount, 'balls');
+        spawnRandomBalls(board, initialCount);
+        
+        console.log('Board after spawning:', board);
+        
+        // Remove any initial lines
+        const initialLines = collectAllLines(board);
+        if (initialLines.length > 0) {
+            for (const [r, c] of initialLines) board[r][c] = 0; // clear instantly
+        }
+        
+        // Generate next balls for preview
+        if (usePreview) {
+            nextBalls = Array(SPAWN).fill().map(() => randomColor());
+        }
+        
+        selectedBall = null;
+        isGameOver = false;
+        score = 0;
+        
+        drawBoard();
+    }
     
     // Improved colors with better contrast and 3D effect
     const colors = [
@@ -320,28 +368,6 @@ function initializeLine98Game() {
         return placed;
     }
     
-    function initBoard() {
-        // Clear board
-        for (let i = 0; i < ROWS; i++) {
-            for (let j = 0; j < COLS; j++) {
-                board[i][j] = 0;
-            }
-        }
-        
-        // Spawn initial balls (5-7 balls)
-        const initialCount = 5 + randInt(3);
-        spawnRandomBalls(board, initialCount);
-        
-        // Remove any initial lines
-        collectAllLines(board);
-        
-        // Generate next balls for preview
-        if (usePreview) {
-            nextBalls = Array(SPAWN).fill().map(() => randomColor());
-        }
-        
-        drawBoard();
-    }
     
     // BFS pathfinding algorithm
     function bfsPath(board, start, target) {
@@ -866,6 +892,9 @@ function initializeLine98Game() {
                     score += rm2.length;
                     updateScore();
                 }
+                
+                // Check game over after spawning new balls
+                checkGameOver();
             }, 250); // Wait for appearance animation to complete
         });
 
@@ -918,7 +947,10 @@ function initializeLine98Game() {
                                 // Check game over
                                 if (emptyCells(board).length === 0) {
                                     isGameOver = true;
-                                    showSuccess(`Game Over! Điểm cuối: ${score}`);
+                                    showSuccess(`🎮 Game Over! Điểm cuối: ${score}`);
+                                } else {
+                                    // Check if there are any valid moves left
+                                    checkGameOver();
                                 }
                             } else {
                                 pathPreview = [];
@@ -938,67 +970,644 @@ function initializeLine98Game() {
     // Find valid moves for hint system
     function findValidMoves() {
         const validMoves = [];
+        
         for (let r = 0; r < ROWS; r++) {
             for (let c = 0; c < COLS; c++) {
                 if (board[r][c] > 0) {
-                    // Check adjacent cells
-                    const directions = [[-1,0], [1,0], [0,-1], [0,1]];
-                    for (const [dr, dc] of directions) {
-                        const nr = r + dr, nc = c + dc;
-                        if (inBoard(nr, nc) && board[nr][nc] === 0) {
-                            const path = bfsPath(board, [r, c], [nr, nc]);
-                            if (path) {
-                                validMoves.push({from: [r, c], to: [nr, nc]});
+                    // Check all empty cells, not just adjacent ones
+                    for (let nr = 0; nr < ROWS; nr++) {
+                        for (let nc = 0; nc < COLS; nc++) {
+                            if (board[nr][nc] === 0) {
+                                const path = bfsPath(board, [r, c], [nr, nc]);
+                                if (path) {
+                                    validMoves.push({from: [r, c], to: [nr, nc]});
+                                }
                             }
                         }
                     }
                 }
             }
         }
+        
         return validMoves;
     }
     
-    function updateScore() {
-        document.getElementById('score').textContent = score;
-        document.getElementById('gameStatus').textContent = `Điểm: ${score}`;
+    // Load saved game
+    function loadGame() {
+        try {
+            const savedData = localStorage.getItem('line98_save');
+            if (savedData) {
+                const gameData = JSON.parse(savedData);
+                if (gameData.board && gameData.score !== undefined) {
+                    // Ensure variables are initialized
+                    if (!board) {
+                        board = Array(ROWS).fill().map(() => Array(COLS).fill(0));
+                    }
+                    
+                    board = gameData.board;
+                    score = gameData.score;
+                    nextBalls = gameData.nextBalls || [];
+                    selectedBall = null;
+                    pathPreview = [];
+                    isGameOver = false;
+                    
+                    updateScore();
+                    drawBoard();
+                    showSuccess('🎮 Game đã được tải lại!');
+                    return true;
+                } else {
+                    showError('❌ Dữ liệu game không hợp lệ!');
+                    return false;
+                }
+            } else {
+                showError('❌ Không có game đã lưu!');
+                return false;
+            }
+        } catch (error) {
+            showError('❌ Lỗi khi tải game: ' + error.message);
+            return false;
+        }
     }
     
-    // Game controls
-    document.getElementById('newGameBtn').addEventListener('click', () => {
-        score = 0;
-        selectedBall = null;
-        isGameOver = false;
+    // Auto-save function
+    function autoSave() {
+        if (!isGameOver) {
+            try {
+                const gameData = {
+                    board: board,
+                    score: score,
+                    nextBalls: nextBalls,
+                    timestamp: new Date().toISOString()
+                };
+                localStorage.setItem('line98_autosave', JSON.stringify(gameData));
+            } catch (error) {
+                console.warn('Auto-save failed:', error);
+            }
+        }
+    }
+    
+    // Auto-save every 30 seconds
+    setInterval(autoSave, 30000);
+    
+    // Advanced hint system with accurate evaluation
+    function findBestMove() {
+        console.log('🔍 Finding best move...');
+        let best = null;
+        let scoringMoves = [];
+        let totalMoves = 0;
+        
+        for (let sr = 0; sr < ROWS; sr++) {
+            for (let sc = 0; sc < COLS; sc++) {
+                const color = board[sr][sc];
+                if (color === 0) continue;
+                
+                const targets = bfsReachableEmpties(board, sr, sc);
+                
+                for (const [tr, tc] of targets) {
+                    totalMoves++;
+                    const stats = evaluatePlacement(board, tr, tc, color, sr, sc);
+                    let score = 0;
+                    
+                    // Priority 1: Immediate clear (≥5 balls) - MUCH higher weight
+                    if (stats.immediateClearCount > 0) {
+                        score += 10000 + stats.immediateClearCount * 100;
+                        console.log(`🎯 SCORING MOVE: (${sr},${sc}) -> (${tr},${tc}) clears ${stats.immediateClearCount} balls!`);
+                    }
+                    
+                    // Priority 2: Extend existing lines (HIGHEST priority for non-scoring moves)
+                    score += stats.lineExtensionBonus || 0;
+                    
+                    // Priority 3: Build longer lines
+                    score += 10 * stats.longestRun;
+                    
+                    // Priority 4: Open ends (better for future moves)
+                    score += 5 * stats.openEnds;
+                    
+                    // Priority 5: Mobility (more empty cells nearby)
+                    score += 2 * stats.mobility;
+                    
+                    // Priority 6: Color bonus (connecting existing lines)
+                    score += 8 * stats.bonusByColor;
+                    
+                    // Penalty for breaking existing lines
+                    score -= stats.lineBreakPenalty || 0;
+                    
+                    // Center bias (prefer moves closer to center)
+                    score += centerBias(tr, tc);
+                    
+                    const candidate = {
+                        from: [sr, sc],
+                        to: [tr, tc],
+                        score: score,
+                        stats: stats,
+                        path: bfsPath(board, [sr, sc], [tr, tc])
+                    };
+                    
+                    if (stats.immediateClearCount > 0) scoringMoves.push(candidate);
+                    
+                    if (!best || better(candidate, best) === candidate) {
+                        best = candidate;
+                    }
+                }
+            }
+        }
+        
+        console.log(`📊 Evaluated ${totalMoves} total moves, found ${scoringMoves.length} scoring moves`);
+        
+        if (scoringMoves.length > 0) {
+            // If we have scoring moves, pick the best one
+            best = scoringMoves.reduce((a, b) => better(a, b));
+            console.log(`🏆 BEST SCORING MOVE: (${best.from[0]},${best.from[1]}) -> (${best.to[0]},${best.to[1]}) clears ${best.stats.immediateClearCount} balls!`);
+        } else if (best) {
+            console.log(`🏆 Best strategic move: (${best.from[0]},${best.from[1]}) -> (${best.to[0]},${best.to[1]}) score: ${Math.round(best.score)}`);
+            console.log(`📈 Stats: run=${best.stats.longestRun}, open=${best.stats.openEnds}, mob=${best.stats.mobility}`);
+        } else {
+            console.log('❌ No valid moves found - GAME OVER!');
+            // Check if game is truly over (no valid moves)
+            checkGameOver();
+        }
+        
+        return best;
+    }
+    
+    // Check if game is over (no valid moves available)
+    function checkGameOver() {
+        if (isGameOver) return; // Already game over
+        
+        // Check if there are any valid moves left
+        const validMoves = findValidMoves();
+        
+        if (validMoves.length === 0) {
+            isGameOver = true;
+            showSuccess(`🎮 Game Over! Điểm cuối: ${score}`);
+            console.log('🎮 Game Over - No valid moves available');
+        }
+    }
+    
+    // Clone board for safe evaluation
+    function cloneBoard(board) {
+        return board.map(row => row.slice());
+    }
+    
+    // Find all reachable empty cells using BFS
+    function bfsReachableEmpties(board, sr, sc) {
+        const q = [[sr, sc]];
+        const visited = Array.from({length: ROWS}, () => Array(COLS).fill(false));
+        visited[sr][sc] = true;
+        const targets = [];
+        const dirs = [[1,0], [-1,0], [0,1], [0,-1]];
+        
+        while (q.length) {
+            const [r, c] = q.shift();
+            for (const [dr, dc] of dirs) {
+                const nr = r + dr, nc = c + dc;
+                if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) continue;
+                if (visited[nr][nc]) continue;
+                
+                // Can only move through empty cells
+                if (board[nr][nc] === 0) {
+                    visited[nr][nc] = true;
+                    q.push([nr, nc]);
+                    targets.push([nr, nc]);
+                }
+            }
+        }
+        return targets;
+    }
+    
+    // Evaluate placement by actually placing the ball and checking results
+    function evaluatePlacement(board, tr, tc, color, fromR = -1, fromC = -1) {
+        const temp = cloneBoard(board);
+        if (fromR >= 0 && fromC >= 0) temp[fromR][fromC] = 0; // simulate move: remove source
+        temp[tr][tc] = color;
+        
+        // Find REAL lines after placement using existing function
+        const clearCells = collectLineCellsAt(temp, tr, tc);
+        const immediateClearCount = clearCells.length;
+        
+        // Debug: Log if we found a scoring move (only for significant clears)
+        if (immediateClearCount >= 5) {
+            console.log(`🎯 BIG SCORE: Placing ${color} at (${tr},${tc}) clears ${immediateClearCount} balls!`);
+        }
+        
+        // Calculate longest run and open ends on temp board
+        const {maxLen, maxOpen} = evalLongestRunAndOpenEnds(temp, tr, tc, color);
+        
+        // Check for existing lines that this move can extend
+        const existingLines = findExistingLines(board, color);
+        const lineExtensionBonus = calculateLineExtensionBonus(board, tr, tc, color, existingLines);
+        
+        // Check if this move would break an existing line (penalty)
+        let lineBreakPenalty = 0;
+        if (fromR >= 0 && fromC >= 0) {
+            lineBreakPenalty = calculateLineBreakPenalty(board, fromR, fromC, tr, tc, color);
+        }
+        
+        // Mobility: number of empty cells in 4 directions after placement
+        const dirs = [[1,0], [-1,0], [0,1], [0,-1]];
+        let mobility = 0;
+        for (const [dr, dc] of dirs) {
+            const nr = tr + dr, nc = tc + dc;
+            if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && temp[nr][nc] === 0) {
+                mobility++;
+            }
+        }
+        
+        // Color bonus: reward for connecting existing lines
+        const bonusByColor = (maxLen >= 4 ? 2 : (maxLen === 3 ? 1 : 0));
+        
+        return {
+            immediateClearCount,
+            longestRun: maxLen,
+            openEnds: maxOpen,
+            mobility,
+            bonusByColor,
+            lineExtensionBonus,
+            lineBreakPenalty
+        };
+    }
+    
+    // Find existing lines of the same color on the board
+    function findExistingLines(board, color) {
+        const lines = [];
+        const visited = new Set();
+        
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS; c++) {
+                if (board[r][c] === color && !visited.has(`${r},${c}`)) {
+                    const line = findLineAtPosition(board, r, c, color);
+                    if (line.length >= 2) { // Only consider lines of 2+ balls
+                        lines.push(line);
+                        for (const [lr, lc] of line) {
+                            visited.add(`${lr},${lc}`);
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Sort lines by length (longer lines first)
+        lines.sort((a, b) => b.length - a.length);
+        
+        return lines;
+    }
+    
+    // Find line starting from a specific position
+    function findLineAtPosition(board, r, c, color) {
+        const dirs = [[0,1], [1,0], [1,1], [1,-1]];
+        let bestLine = [[r, c]];
+        
+        for (const [dr, dc] of dirs) {
+            const line = [[r, c]];
+            
+            // Forward direction
+            let rr = r + dr, cc = c + dc;
+            while (rr >= 0 && rr < ROWS && cc >= 0 && cc < COLS && board[rr][cc] === color) {
+                line.push([rr, cc]);
+                rr += dr; cc += dc;
+            }
+            
+            // Backward direction
+            rr = r - dr; cc = c - dc;
+            while (rr >= 0 && rr < ROWS && cc >= 0 && cc < COLS && board[rr][cc] === color) {
+                line.unshift([rr, cc]);
+                rr -= dr; cc -= dc;
+            }
+            
+            if (line.length > bestLine.length) {
+                bestLine = line;
+            }
+        }
+        
+        // Only return lines that are actually connected (not just single balls)
+        return bestLine.length >= 2 ? bestLine : [[r, c]];
+    }
+    
+    // Calculate bonus for extending existing lines
+    function calculateLineExtensionBonus(board, tr, tc, color, existingLines) {
+        let bonus = 0;
+        
+        for (const line of existingLines) {
+            if (line.length < 2) continue;
+            
+            // Check if this position can extend the line at either end
+            const first = line[0];
+            const last = line[line.length - 1];
+            
+            // Calculate direction of the line (exact integer direction)
+            const dR = Math.sign(last[0] - first[0]); // -1, 0 hoặc 1
+            const dC = Math.sign(last[1] - first[1]); // -1, 0 hoặc 1
+            
+            const end1 = [first[0] - dR, first[1] - dC];
+            const end2 = [last[0] + dR, last[1] + dC];
+            
+            if ((tr === end1[0] && tc === end1[1]) || (tr === end2[0] && tc === end2[1])) {
+                // This move extends the line
+                bonus += line.length * 10; // Bigger bonus for longer lines
+                console.log(`🔗 Extending line of ${line.length} balls at (${tr},${tc})`);
+                break; // Only count the best extension
+            }
+        }
+        
+        return bonus;
+    }
+    
+    // Check if moving a ball would break an existing line
+    function wouldBreakExistingLine(board, fromR, fromC, toR, toC, color) {
+        // Check if the source position is part of an existing line
+        const existingLines = findExistingLines(board, color);
+        
+        for (const line of existingLines) {
+            if (line.length < 2) continue;
+            
+            // Check if the source ball is part of this line
+            const isPartOfLine = line.some(([r, c]) => r === fromR && c === fromC);
+            
+            if (isPartOfLine) {
+                // This ball is part of an existing line, check if moving it would break it
+                const remainingLine = line.filter(([r, c]) => !(r === fromR && c === fromC));
+                
+                if (remainingLine.length < 2) {
+                    // Moving this ball would break the line completely
+                    console.log(`⚠️ Moving ball from (${fromR},${fromC}) would break line of ${line.length} balls`);
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    }
+    
+    // Calculate penalty for breaking existing lines
+    function calculateLineBreakPenalty(board, fromR, fromC, toR, toC, color) {
+        let penalty = 0;
+        
+        // Check if moving this ball would break an existing line
+        if (wouldBreakExistingLine(board, fromR, fromC, toR, toC, color)) {
+            penalty = 1000; // Fixed heavy penalty for breaking existing lines
+        }
+        
+        return penalty;
+    }
+    
+    // Calculate longest run and open ends on temp board
+    function evalLongestRunAndOpenEnds(board, r, c, color) {
+        const dirs = [[0,1], [1,0], [1,1], [1,-1]];
+        let maxLen = 1, maxOpen = 0;
+        
+        for (const [dr, dc] of dirs) {
+            const cells = [[r, c]];
+            
+            // Forward direction
+            let rr = r + dr, cc = c + dc;
+            while (rr >= 0 && rr < ROWS && cc >= 0 && cc < COLS && board[rr][cc] === color) {
+                cells.push([rr, cc]);
+                rr += dr; cc += dc;
+            }
+            const end1Open = (rr >= 0 && rr < ROWS && cc >= 0 && cc < COLS && board[rr][cc] === 0) ? 1 : 0;
+            
+            // Backward direction
+            rr = r - dr; cc = c - dc;
+            while (rr >= 0 && rr < ROWS && cc >= 0 && cc < COLS && board[rr][cc] === color) {
+                cells.push([rr, cc]);
+                rr -= dr; cc -= dc;
+            }
+            const end2Open = (rr >= 0 && rr < ROWS && cc >= 0 && cc < COLS && board[rr][cc] === 0) ? 1 : 0;
+            
+            if (cells.length > maxLen) {
+                maxLen = cells.length;
+                maxOpen = end1Open + end2Open;
+            } else if (cells.length === maxLen) {
+                // Prefer more open ends
+                const open = end1Open + end2Open;
+                if (open > maxOpen) maxOpen = open;
+            }
+        }
+        
+        return {maxLen, maxOpen};
+    }
+    
+    // Center bias: prefer moves closer to center
+    function centerBias(tr, tc) {
+        const cr = (ROWS - 1) / 2, cc = (COLS - 1) / 2;
+        const dist = Math.abs(tr - cr) + Math.abs(tc - cc);
+        return -dist * 0.1; // Penalty for being far from center
+    }
+    
+    // Compare two moves and return the better one
+    function better(a, b) {
+        if (!a) return b;
+        if (b.score !== a.score) return (b.score > a.score) ? b : a;
+        
+        // Tie-break rules - prioritize moves that clear balls
+        if (b.stats.immediateClearCount !== a.stats.immediateClearCount)
+            return (b.stats.immediateClearCount > a.stats.immediateClearCount) ? b : a;
+        if (b.stats.longestRun !== a.stats.longestRun)
+            return (b.stats.longestRun > a.stats.longestRun) ? b : a;
+        if (b.stats.openEnds !== a.stats.openEnds)
+            return (b.stats.openEnds > a.stats.openEnds) ? b : a;
+        
+        // Additional tie-break: prefer moves closer to center
+        const centerBiasA = centerBias(a.to[0], a.to[1]);
+        const centerBiasB = centerBias(b.to[0], b.to[1]);
+        if (centerBiasB !== centerBiasA)
+            return (centerBiasB > centerBiasA) ? b : a;
+            
+        return a;
+    }
+    
+    function updateScore() {
+        const scoreElement = document.getElementById('score');
+        const statusElement = document.getElementById('gameStatus');
+        
+        if (scoreElement) {
+            scoreElement.textContent = score;
+        }
+        if (statusElement) {
+            statusElement.textContent = `Điểm: ${score}`;
+        }
+    }
+    
+    // Initialize button event listeners
+    initializeLine98Buttons();
+    
+    // Variables are already initialized above
+    
+    // Try to load saved game first, otherwise start new game
+    const savedData = localStorage.getItem('line98_save');
+    if (savedData) {
+        try {
+            const gameData = JSON.parse(savedData);
+            if (gameData.board && gameData.score !== undefined) {
+                board = gameData.board;
+                score = gameData.score;
+                nextBalls = gameData.nextBalls || [];
+                selectedBall = null;
+                pathPreview = [];
+                isGameOver = false;
+                
+                updateScore();
+                drawBoard();
+                showSuccess('🎮 Đã tải game đã lưu!');
+            } else {
+                initBoard();
+                updateScore();
+            }
+        } catch (error) {
+            console.warn('Error loading saved game:', error);
+            initBoard();
+            updateScore();
+        }
+    } else {
         initBoard();
         updateScore();
-    });
+    }
     
-    document.getElementById('hintBtn').addEventListener('click', () => {
-        if (isGameOver) return;
+    // Initialize button event listeners inside the game scope
+    function initializeLine98Buttons() {
+        // Remove existing listeners first
+        const newGameBtn = document.getElementById('newGameBtn');
+        const hintBtn = document.getElementById('hintBtn');
+        const saveGameBtn = document.getElementById('saveGameBtn');
         
-        const validMoves = findValidMoves();
-        if (validMoves.length > 0) {
-            const move = validMoves[0];
-            const [fr, fc] = move.from;
-            const [tr, tc] = move.to;
-            selectedBall = { row: fr, col: fc };
-            drawBoard();
-            showSuccess(`Gợi ý: Di chuyển bóng từ (${fr+1},${fc+1}) đến (${tr+1},${tc+1})`);
-        } else {
-            showError('Không có nước đi hợp lệ!');
+        if (newGameBtn) {
+            newGameBtn.replaceWith(newGameBtn.cloneNode(true));
+            const newNewGameBtn = document.getElementById('newGameBtn');
+            
+            newNewGameBtn.addEventListener('click', () => {
+                if (confirm('🎮 Bạn có chắc muốn bắt đầu game mới? Game hiện tại sẽ bị mất!')) {
+                    // Clear saved games
+                    localStorage.removeItem('line98_save');
+                    localStorage.removeItem('line98_autosave');
+                    
+                    // Reset game state
+                    selectedBall = null;
+                    pathPreview = [];
+                    isGameOver = false;
+                    score = 0;
+                    nextBalls = [];
+                    animatingCells.clear();
+                    appearingCells.clear();
+                    sparkleEffects = [];
+                    movingBall = null;
+                    animationFrame = 0;
+                    
+                    // Clear the board
+                    for (let i = 0; i < ROWS; i++) {
+                        for (let j = 0; j < COLS; j++) {
+                            board[i][j] = 0;
+                        }
+                    }
+                    
+                    // Initialize new game
+                    initBoard();
+                    updateScore();
+                    drawBoard();
+                    
+                    showSuccess('🎮 Game mới đã bắt đầu!');
+                }
+            });
         }
-    });
-    
-    document.getElementById('saveGameBtn').addEventListener('click', () => {
-        if (socket) {
-            socket.emit('saveGame', { gameState: { board, score, nextBalls } });
-            showSuccess('Game đã được lưu!');
-        } else {
-            showSuccess('Game đã được lưu!');
+        
+        if (hintBtn) {
+            hintBtn.replaceWith(hintBtn.cloneNode(true));
+            const newHintBtn = document.getElementById('hintBtn');
+            
+            newHintBtn.addEventListener('click', () => {
+                if (isGameOver) {
+                    showError('❌ Game đã kết thúc!');
+                    return;
+                }
+                
+                const bestMove = findBestMove();
+                
+                if (bestMove) {
+                    const { from, to, path, score, stats } = bestMove;
+                    const [fr, fc] = from;
+                    const [tr, tc] = to;
+                    
+                    // Create detailed hint message
+                    let hintMessage = `💡 Gợi ý: Di chuyển từ (${fr+1}, ${fc+1}) đến (${tr+1}, ${tc+1})`;
+                    
+                    if (stats.immediateClearCount > 0) {
+                        hintMessage = `🎯 NƯỚC ĂN ĐIỂM: Di chuyển từ (${fr+1}, ${fc+1}) đến (${tr+1}, ${tc+1})`;
+                        hintMessage += `\n🔥 Sẽ xóa ${stats.immediateClearCount} bóng ngay lập tức!`;
+                        hintMessage += `\n💎 Điểm: +${stats.immediateClearCount}`;
+                    } else {
+                        if (stats.lineExtensionBonus > 0) {
+                            hintMessage = `🔗 NỐI DÀI DÃY: Di chuyển từ (${fr+1}, ${fc+1}) đến (${tr+1}, ${tc+1})`;
+                            hintMessage += `\n📏 Nối dài dãy có sẵn (+${stats.lineExtensionBonus} điểm)`;
+                        } else if (stats.lineBreakPenalty > 0) {
+                            hintMessage = `⚠️ NƯỚC TỐT: Di chuyển từ (${fr+1}, ${fc+1}) đến (${tr+1}, ${tc+1})`;
+                            hintMessage += `\n📏 Tạo dãy ${stats.longestRun} bóng (${stats.openEnds} đầu mở)`;
+                            hintMessage += `\n⚠️ Lưu ý: Có thể ảnh hưởng dãy hiện có`;
+                        } else {
+                            hintMessage += `\n📏 Tạo dãy ${stats.longestRun} bóng (${stats.openEnds} đầu mở)`;
+                        }
+                        hintMessage += `\n🔗 Cơ động: ${stats.mobility} ô trống lân cận`;
+                        if (stats.bonusByColor > 0) {
+                            hintMessage += `\n✨ Kết nối dãy có sẵn (+${stats.bonusByColor})`;
+                        }
+                        hintMessage += `\n📊 Điểm tiềm năng: ${Math.round(score)}`;
+                    }
+                    
+                    showSuccess(hintMessage);
+                    
+                    // Set hint mode to show source ball, path, and target position
+                    selectedBall = { row: fr, col: fc };
+                    pathPreview = path;
+                    
+                    // Add target position to path preview for better visibility
+                    if (pathPreview.length > 0) {
+                        pathPreview.push([tr, tc]);
+                    }
+                    
+                    drawBoard();
+                    
+                    setTimeout(() => {
+                        selectedBall = null;
+                        pathPreview = [];
+                        drawBoard();
+                    }, 5000); // Increased to 5 seconds for better reading
+                } else {
+                    showError('❌ Không tìm thấy nước đi hợp lệ!');
+                    // Check if game is over
+                    checkGameOver();
+                }
+            });
         }
-    });
+        
+        if (saveGameBtn) {
+            saveGameBtn.replaceWith(saveGameBtn.cloneNode(true));
+            const newSaveGameBtn = document.getElementById('saveGameBtn');
+            
+            newSaveGameBtn.addEventListener('click', () => {
+                if (isGameOver) {
+                    showError('❌ Không thể lưu game đã kết thúc!');
+                    return;
+                }
+                
+                try {
+                    const gameData = {
+                        board: board,
+                        score: score,
+                        nextBalls: nextBalls,
+                        timestamp: new Date().toISOString()
+                    };
+                    
+                    localStorage.setItem('line98_save', JSON.stringify(gameData));
+                    showSuccess('💾 Game đã được lưu thành công!');
+                } catch (error) {
+                    showError('❌ Lỗi khi lưu game: ' + error.message);
+                }
+            });
+        }
+    }
     
-    initBoard();
-    updateScore();
+    
+    // Initialize buttons
+    initializeLine98Buttons();
+    
 }
 
 function initializeCaroGame() {
