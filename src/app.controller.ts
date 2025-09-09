@@ -20,13 +20,4 @@ export class AppController {
     }
   }
 
-  @Get('test.html')
-  getTestHtml(@Res() res: Response) {
-    const filePath = join(process.cwd(), 'public', 'test.html');
-    if (existsSync(filePath)) {
-      res.sendFile(filePath);
-    } else {
-      res.status(404).json({ message: 'File not found' });
-    }
-  }
 }
