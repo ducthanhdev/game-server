@@ -1475,39 +1475,82 @@ function initializeLine98Game() {
             const newNewGameBtn = document.getElementById('newGameBtn');
             
             newNewGameBtn.addEventListener('click', () => {
-                if (confirm('🎮 Bạn có chắc muốn bắt đầu game mới? Game hiện tại sẽ bị mất!')) {
-                    // Clear saved games
-                    localStorage.removeItem('line98_save');
-                    localStorage.removeItem('line98_autosave');
-                    
-                    // Reset game state
-                    selectedBall = null;
-                    pathPreview = [];
-                    isGameOver = false;
-                    score = 0;
-                    nextBalls = [];
-                    animatingCells.clear();
-                    appearingCells.clear();
-                    sparkleEffects = [];
-                    movingBall = null;
-                    animationFrame = 0;
-                    
-                    // Clear the board
-                    for (let i = 0; i < ROWS; i++) {
-                        for (let j = 0; j < COLS; j++) {
-                            board[i][j] = 0;
-                        }
+                // Show confirmation toast instead of alert
+                showWarning('🎮 Bạn có chắc muốn bắt đầu game mới? Game hiện tại sẽ bị mất!');
+                
+                // Create confirmation buttons
+                const confirmToast = document.createElement('div');
+                confirmToast.className = 'toast warning';
+                confirmToast.innerHTML = `
+                    <div class="toast-header">
+                        <div style="display: flex; align-items: center;">
+                            <span class="toast-icon">⚠️</span>
+                            <span>Xác nhận</span>
+                        </div>
+                    </div>
+                    <div class="toast-body">
+                        <p>Bạn có chắc muốn bắt đầu game mới? Game hiện tại sẽ bị mất!</p>
+                        <div style="display: flex; gap: 10px; margin-top: 10px;">
+                            <button onclick="confirmNewGame()" style="background: #51cf66; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Có</button>
+                            <button onclick="closeToast(this)" style="background: #ff6b6b; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Không</button>
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('toastContainer').appendChild(confirmToast);
+                
+                // Auto remove after 10 seconds
+                setTimeout(() => {
+                    if (confirmToast.parentNode) {
+                        confirmToast.parentNode.removeChild(confirmToast);
                     }
-                    
-                    // Initialize new game
-                    initBoard();
-                    updateScore();
-                    drawBoard();
-                    
-                    showSuccess('🎮 Game mới đã bắt đầu!');
-                }
+                }, 10000);
             });
         }
+        
+        // Global function for confirming new game
+        window.confirmNewGame = function() {
+            // Close confirmation toast
+            const toasts = document.querySelectorAll('.toast');
+            toasts.forEach(toast => {
+                if (toast.querySelector('button[onclick="confirmNewGame()"]')) {
+                    closeToast(toast.querySelector('.toast-close') || toast.querySelector('button[onclick="closeToast(this)"]'));
+                }
+            });
+            
+            // Proceed with new game
+            if (true) { // Always proceed since user clicked "Có"
+                // Clear saved games
+                localStorage.removeItem('line98_save');
+                localStorage.removeItem('line98_autosave');
+                
+                // Reset game state
+                selectedBall = null;
+                pathPreview = [];
+                isGameOver = false;
+                score = 0;
+                nextBalls = [];
+                animatingCells.clear();
+                appearingCells.clear();
+                sparkleEffects = [];
+                movingBall = null;
+                animationFrame = 0;
+
+                // Clear the board
+                for (let i = 0; i < ROWS; i++) {
+                    for (let j = 0; j < COLS; j++) {
+                        board[i][j] = 0;
+                    }
+                }
+
+                // Initialize new game
+                initBoard();
+                updateScore();
+                drawBoard();
+
+                showSuccess('🎮 Game mới đã bắt đầu!');
+            }
+        };
         
         if (hintBtn) {
             hintBtn.replaceWith(hintBtn.cloneNode(true));
@@ -1696,18 +1739,71 @@ function updateGameDisplay() {
     }
 }
 
+// Toast notification system
+function showToast(message, type = 'info', duration = 5000) {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+    
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    const icons = {
+        success: '✅',
+        error: '❌',
+        warning: '⚠️',
+        info: 'ℹ️'
+    };
+    
+    const titles = {
+        success: 'Thành công',
+        error: 'Lỗi',
+        warning: 'Cảnh báo',
+        info: 'Thông tin'
+    };
+    
+    toast.innerHTML = `
+        <div class="toast-header">
+            <div style="display: flex; align-items: center;">
+                <span class="toast-icon">${icons[type] || icons.info}</span>
+                <span>${titles[type] || titles.info}</span>
+            </div>
+            <button class="toast-close" onclick="closeToast(this)">&times;</button>
+        </div>
+        <div class="toast-body">${message}</div>
+    `;
+    
+    container.appendChild(toast);
+    
+    // Auto remove after duration
+    setTimeout(() => {
+        closeToast(toast.querySelector('.toast-close'));
+    }, duration);
+}
+
+function closeToast(button) {
+    const toast = button.closest('.toast');
+    if (toast) {
+        toast.classList.add('fade-out');
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
+    }
+}
+
 function showError(message) {
-    const errorEl = document.getElementById('errorMessage');
-    errorEl.textContent = message;
-    errorEl.style.display = 'block';
-    document.getElementById('successMessage').style.display = 'none';
-    setTimeout(() => errorEl.style.display = 'none', 5000);
+    showToast(message, 'error', 5000);
 }
 
 function showSuccess(message) {
-    const successEl = document.getElementById('successMessage');
-    successEl.textContent = message;
-    successEl.style.display = 'block';
-    document.getElementById('errorMessage').style.display = 'none';
-    setTimeout(() => successEl.style.display = 'none', 3000);
+    showToast(message, 'success', 4000);
+}
+
+function showWarning(message) {
+    showToast(message, 'warning', 4000);
+}
+
+function showInfo(message) {
+    showToast(message, 'info', 3000);
 }
