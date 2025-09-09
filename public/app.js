@@ -195,8 +195,14 @@ async function handleRegister(e) {
 
         const data = await response.json();
         if (response.ok) {
-            showSuccess('Đăng ký thành công! Vui lòng đăng nhập.');
-            setTimeout(() => document.getElementById('showLogin').click(), 1500);
+            // Register now returns login response directly
+            localStorage.setItem('token', data.access_token);
+            currentUser = data.user;
+            showSuccess('Đăng ký thành công!');
+            setTimeout(() => {
+                showGameSelection();
+                initializeSocket();
+            }, 1000);
         } else {
             showError(data.message || 'Đăng ký thất bại');
         }

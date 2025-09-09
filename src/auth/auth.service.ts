@@ -41,7 +41,7 @@ export class AuthService {
       nickname,
     });
     
-    const { password: _, ...result } = user;
-    return result;
+    // Return login response with JWT token
+    return this.login(user);
   }
 }
