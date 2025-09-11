@@ -21,7 +21,7 @@ export class JwtWsGuard implements CanActivate {
 
       // Verify token
       const payload = await this.jwtService.verifyAsync(token, {
-        secret: 'your-secret-key', // Sử dụng cùng secret với auth module
+        secret: process.env.JWT_SECRET || 'your-secret-key-change-this-in-production',
       });
 
       // Gắn user vào client data
