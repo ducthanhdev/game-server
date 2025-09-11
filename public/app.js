@@ -24,13 +24,20 @@ function initializeApp() {
         fetch('/auth/profile', {
             headers: { 'Authorization': `Bearer ${token}` }
         })
-        .then(response => response.ok ? response.json() : Promise.reject())
+        .then(response => {
+            if (!response.ok) {
+                console.log('Token validation failed:', response.status, response.statusText);
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
         .then(user => {
             currentUser = user;
             showGameSelection();
             initializeSocket();
         })
-        .catch(() => {
+        .catch(error => {
+            console.log('Token validation error:', error);
             localStorage.removeItem('token');
             showAuthScreen();
         });
