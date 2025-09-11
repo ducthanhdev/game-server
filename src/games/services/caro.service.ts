@@ -39,12 +39,6 @@ export class CaroService {
     private caroMatchModel: Model<CaroMatchDocument>,
   ) {}
 
-  /**
-   * Tạo phòng game mới
-   * @param xUserId ID của người chơi X
-   * @param oUserId ID của người chơi O
-   * @returns Trạng thái phòng
-   */
   createRoom(xUserId: string, oUserId: string): RoomState {
     const roomId = nanoid();
     const board = Array.from({ length: 15 }, () => Array(15).fill(0));
@@ -63,14 +57,6 @@ export class CaroService {
     return state;
   }
 
-  /**
-   * Thực hiện nước đi
-   * @param roomId ID phòng
-   * @param userId ID người chơi
-   * @param x Tọa độ x
-   * @param y Tọa độ y
-   * @returns Kết quả nước đi
-   */
   makeMove(roomId: string, userId: string, x: number, y: number): {
     state: RoomState;
     win: boolean;
@@ -121,12 +107,6 @@ export class CaroService {
     };
   }
 
-  /**
-   * Kết thúc game và lưu vào database
-   * @param roomId ID phòng
-   * @param winnerUserId ID người thắng
-   * @param winnerSymbol Ký hiệu người thắng
-   */
   async endAndPersist(roomId: string, winnerUserId?: string, winnerSymbol?: 'X' | 'O'): Promise<void> {
     const state = this.rooms.get(roomId);
     if (!state) return;
@@ -148,29 +128,14 @@ export class CaroService {
         endedAt: new Date(),
       });
     } catch (error) {
-      console.error('Error saving caro match:', error);
     }
 
-    // KHÔNG xóa khỏi memory ngay lập tức
-    // Sẽ xóa sau một thời gian hoặc khi tạo game mới
-    // this.rooms.delete(roomId);
   }
 
-  /**
-   * Lấy trạng thái phòng
-   * @param roomId ID phòng
-   * @returns Trạng thái phòng hoặc undefined
-   */
   getState(roomId: string): RoomState | undefined {
     return this.rooms.get(roomId);
   }
 
-  /**
-   * Yêu cầu game mới
-   * @param roomId ID phòng
-   * @param userId ID người yêu cầu
-   * @returns Trạng thái yêu cầu
-   */
   requestNewGame(roomId: string, userId: string): { success: boolean; message: string } {
     const state = this.rooms.get(roomId);
     if (!state) {
@@ -200,12 +165,6 @@ export class CaroService {
     return { success: true, message: 'Đã gửi yêu cầu game mới' };
   }
 
-  /**
-   * Xác nhận game mới
-   * @param roomId ID phòng
-   * @param userId ID người xác nhận
-   * @returns Trạng thái xác nhận
-   */
   confirmNewGame(roomId: string, userId: string): { success: boolean; message: string; shouldCreate: boolean } {
     const state = this.rooms.get(roomId);
     if (!state || !state.newGameRequest) {
@@ -240,12 +199,6 @@ export class CaroService {
     return { success: true, message: 'Đã xác nhận, chờ người chơi còn lại', shouldCreate: false };
   }
 
-  /**
-   * Từ chối game mới
-   * @param roomId ID phòng
-   * @param userId ID người từ chối
-   * @returns Trạng thái từ chối
-   */
   rejectNewGame(roomId: string, userId: string): { success: boolean; message: string } {
     const state = this.rooms.get(roomId);
     if (!state || !state.newGameRequest) {
@@ -266,10 +219,6 @@ export class CaroService {
     return { success: true, message: 'Đã từ chối game mới' };
   }
 
-  /**
-   * Xóa yêu cầu game mới
-   * @param roomId ID phòng
-   */
   clearNewGameRequest(roomId: string): void {
     const state = this.rooms.get(roomId);
     if (state) {
@@ -277,11 +226,6 @@ export class CaroService {
     }
   }
 
-  /**
-   * Bắt đầu timeout cho lượt đi
-   * @param roomId ID phòng
-   * @param timeoutCallback Callback khi timeout
-   */
   startTurnTimeout(roomId: string, timeoutCallback: () => void): void {
     const state = this.rooms.get(roomId);
     if (!state || state.status !== 'playing') return;
@@ -297,10 +241,6 @@ export class CaroService {
     state.lastMoveTime = Date.now();
   }
 
-  /**
-   * Dừng timeout cho lượt đi
-   * @param roomId ID phòng
-   */
   stopTurnTimeout(roomId: string): void {
     const state = this.rooms.get(roomId);
     if (!state || !state.turnTimeout) return;
@@ -309,11 +249,6 @@ export class CaroService {
     state.turnTimeout = undefined;
   }
 
-  /**
-   * Lấy thời gian còn lại của lượt đi
-   * @param roomId ID phòng
-   * @returns Thời gian còn lại (ms) hoặc 0 nếu không có timeout
-   */
   getRemainingTime(roomId: string): number {
     const state = this.rooms.get(roomId);
     if (!state || !state.lastMoveTime || !state.turnTimeout) return 0;
@@ -323,11 +258,6 @@ export class CaroService {
     return Math.max(0, remaining);
   }
 
-  /**
-   * Lấy thông tin phòng (không bao gồm board đầy đủ)
-   * @param roomId ID phòng
-   * @returns Thông tin phòng
-   */
   getRoomInfo(roomId: string): Partial<RoomState> | undefined {
     const state = this.rooms.get(roomId);
     if (!state) return undefined;
@@ -343,20 +273,10 @@ export class CaroService {
     };
   }
 
-  /**
-   * Xóa phòng (khi có lỗi hoặc disconnect)
-   * @param roomId ID phòng
-   */
   removeRoom(roomId: string): void {
     this.rooms.delete(roomId);
   }
 
-  /**
-   * Kết thúc game và lưu kết quả
-   * @param roomId ID phòng
-   * @param winnerId ID người thắng
-   * @param winnerSymbol Symbol người thắng
-   */
   async endGame(roomId: string, winnerId: string, winnerSymbol: 'X' | 'O'): Promise<void> {
     const state = this.rooms.get(roomId);
     if (!state) return;
@@ -378,7 +298,6 @@ export class CaroService {
 
       await match.save();
     } catch (error) {
-      console.error('Error saving game to database:', error);
     }
 
     this.rooms.delete(roomId);

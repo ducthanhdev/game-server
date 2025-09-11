@@ -97,7 +97,7 @@ function setupEventListeners() {
 // Socket initialization - Disabled for now
 function initializeSocket() {
     // Socket.IO disabled for now - using local game only
-updateupdate    socket = null;
+    socket = null;
 }
 
 // Game functions

@@ -148,11 +148,7 @@ export class CaroGateway implements OnGatewayConnection, OnGatewayDisconnect {
         });
       });
 
-      
-      // Xóa sockets khỏi matchmaking sau khi tạo phòng thành công
-      this.matchmakingService.removeMatchedUsers([xUserId, oUserId]);
     } catch (error) {
-      console.error('Error in queue.join:', error);
       client.emit('queue.error', { message: 'Lỗi khi tham gia hàng đợi' });
     }
   }
@@ -215,7 +211,6 @@ export class CaroGateway implements OnGatewayConnection, OnGatewayDisconnect {
         });
       }
     } catch (error) {
-      console.error('Error in room.makeMove:', error);
       client.emit('room.error', { 
         code: error.message, 
         message: 'Nước đi không hợp lệ' 
@@ -256,7 +251,6 @@ export class CaroGateway implements OnGatewayConnection, OnGatewayDisconnect {
       await this.caroService.endAndPersist(roomId, winnerUserId, winnerSymbol);
       
     } catch (error) {
-      console.error('Error in room.resign:', error);
       client.emit('room.error', { code: 'RESIGN_ERROR', message: 'Lỗi khi xin thua' });
     }
   }
@@ -277,7 +271,6 @@ export class CaroGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       client.emit('room.state', { fullState: state });
     } catch (error) {
-      console.error('Error in room.state:', error);
       client.emit('room.error', { code: 'STATE_ERROR', message: 'Lỗi khi lấy trạng thái phòng' });
     }
   }
@@ -333,7 +326,6 @@ export class CaroGateway implements OnGatewayConnection, OnGatewayDisconnect {
       });
 
     } catch (error) {
-      console.error('Error in room.newGame:', error);
       client.emit('room.error', { code: 'NEW_GAME_ERROR', message: 'Lỗi khi yêu cầu game mới' });
     }
   }
@@ -382,7 +374,6 @@ export class CaroGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
 
     } catch (error) {
-      console.error('Error in room.confirmNewGame:', error);
       client.emit('room.error', { code: 'CONFIRM_ERROR', message: 'Lỗi khi xác nhận game mới' });
     }
   }
@@ -425,18 +416,13 @@ export class CaroGateway implements OnGatewayConnection, OnGatewayDisconnect {
         });
       });
 
-      // Xóa yêu cầu game mới
       this.caroService.clearNewGameRequest(roomId);
 
     } catch (error) {
-      console.error('Error in room.rejectNewGame:', error);
       client.emit('room.error', { code: 'REJECT_ERROR', message: 'Lỗi khi từ chối game mới' });
     }
   }
 
-  /**
-   * Tạo game mới sau khi cả 2 người xác nhận
-   */
   private async createNewGameAfterConfirmation(roomId: string, oldState: any) {
     try {
       // Tạo game mới với cùng 2 người chơi
@@ -478,13 +464,9 @@ export class CaroGateway implements OnGatewayConnection, OnGatewayDisconnect {
       });
 
     } catch (error) {
-      console.error('Error creating new game after confirmation:', error);
     }
   }
 
-  /**
-   * Xử lý khi timeout lượt đi
-   */
   private handleTurnTimeout(roomId: string): void {
     try {
       
@@ -513,15 +495,11 @@ export class CaroGateway implements OnGatewayConnection, OnGatewayDisconnect {
         });
       });
 
-      // Lưu kết quả và xóa phòng
       this.caroService.endGame(roomId, winnerId, winnerSymbol);
       
-      // Xóa sockets khỏi matchmaking
-      this.matchmakingService.removeMatchedUsers([state.players.xUserId, state.players.oUserId]);
 
 
     } catch (error) {
-      console.error('Error handling turn timeout:', error);
     }
   }
 }

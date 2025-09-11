@@ -38,19 +38,16 @@ export class JwtWsGuard implements CanActivate {
   }
 
   private extractTokenFromSocket(client: Socket): string | null {
-    // Thử lấy từ auth
     if (client.handshake.auth?.token) {
       const token = client.handshake.auth.token;
       return token.startsWith('Bearer ') ? token.substring(7) : token;
     }
 
-    // Thử lấy từ headers
     const authHeader = client.handshake.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
       return authHeader.substring(7);
     }
 
-    // Thử lấy từ query
     if (client.handshake.query?.token) {
       const token = client.handshake.query.token as string;
       return token.startsWith('Bearer ') ? token.substring(7) : token;

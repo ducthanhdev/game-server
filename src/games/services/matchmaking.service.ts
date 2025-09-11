@@ -12,12 +12,6 @@ export class MatchmakingService {
   private queue: QueuedUser[] = [];
   private userSocketMap = new Map<string, Socket>();
 
-  /**
-   * Thêm user vào hàng đợi
-   * @param userId ID của user
-   * @param socket Socket connection
-   * @returns Đối thủ nếu có, null nếu chưa có
-   */
   enqueue(userId: string, socket: Socket): string | null {
     // Kiểm tra user đã có trong queue chưa
     const existingIndex = this.queue.findIndex(u => u.userId === userId);
@@ -53,10 +47,6 @@ export class MatchmakingService {
     return null; // Chưa có đối thủ
   }
 
-  /**
-   * Xóa user khỏi hàng đợi
-   * @param userId ID của user
-   */
   dequeue(userId: string): void {
     const index = this.queue.findIndex(u => u.userId === userId);
     if (index !== -1) {
@@ -65,20 +55,10 @@ export class MatchmakingService {
     }
   }
 
-  /**
-   * Lấy socket của user
-   * @param userId ID của user
-   * @returns Socket hoặc undefined
-   */
   getSocket(userId: string): Socket | undefined {
     return this.userSocketMap.get(userId);
   }
 
-  /**
-   * Lấy sockets của nhiều user
-   * @param userIds Mảng ID của users
-   * @returns Mảng sockets
-   */
   getSockets(userIds: string[]): Socket[] {
     const sockets = userIds
       .map(id => {
@@ -90,9 +70,6 @@ export class MatchmakingService {
     return sockets;
   }
 
-  /**
-   * Lấy thông tin hàng đợi
-   */
   getQueueInfo(): { count: number; users: string[] } {
     return {
       count: this.queue.length,
@@ -100,32 +77,12 @@ export class MatchmakingService {
     };
   }
 
-  /**
-   * Xóa user khỏi tất cả (khi disconnect)
-   * @param userId ID của user
-   */
   removeUser(userId: string): void {
     this.dequeue(userId);
     this.userSocketMap.delete(userId);
   }
 
-  /**
-   * Xóa sockets của 2 users sau khi tạo phòng thành công
-   * @param userIds Mảng ID của users
-   */
-  removeMatchedUsers(userIds: string[]): void {
-    // KHÔNG xóa sockets khỏi userSocketMap
-    // Vì cần giữ để có thể tạo game mới
-    // userIds.forEach(userId => {
-    //   this.userSocketMap.delete(userId);
-    // });
-  }
 
-  /**
-   * Cập nhật socket cho user (khi reconnect)
-   * @param userId ID của user
-   * @param socket Socket mới
-   */
   updateUserSocket(userId: string, socket: Socket): void {
     this.userSocketMap.set(userId, socket);
   }

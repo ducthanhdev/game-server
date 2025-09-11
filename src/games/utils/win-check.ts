@@ -1,10 +1,3 @@
-/**
- * Kiểm tra thắng trong game Caro
- * @param board Bàn cờ 15x15 (0 = trống, 1 = X, 2 = O)
- * @param x Tọa độ x của nước đi vừa thực hiện
- * @param y Tọa độ y của nước đi vừa thực hiện
- * @returns true nếu thắng, false nếu chưa thắng
- */
 export function isWin(board: number[][], x: number, y: number): boolean {
   const n = board.length;
   const me = board[y][x];
@@ -37,13 +30,6 @@ export function isWin(board: number[][], x: number, y: number): boolean {
   return false;
 }
 
-/**
- * Kiểm tra thắng và trả về thông tin chi tiết
- * @param board Bàn cờ 15x15
- * @param x Tọa độ x của nước đi vừa thực hiện
- * @param y Tọa độ y của nước đi vừa thực hiện
- * @returns Thông tin thắng hoặc null
- */
 export function getWinInfo(board: number[][], x: number, y: number): { 
   isWin: boolean; 
   line?: { from: { x: number; y: number }; to: { x: number; y: number } } 
