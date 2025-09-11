@@ -19,7 +19,13 @@ async function bootstrap() {
   app.useWebSocketAdapter(new IoAdapter(app));
   
   // Serve static files
-  app.use(express.static(join(__dirname, '..', 'public')));
+  app.use(express.static(join(process.cwd(), 'public'), {
+    setHeaders: (res, path) => {
+      if (path.endsWith('.js')) {
+        res.setHeader('Content-Type', 'application/javascript');
+      }
+    }
+  }));
   
   // Global validation pipe
   app.useGlobalPipes(new ValidationPipe({

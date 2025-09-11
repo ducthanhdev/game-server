@@ -10,14 +10,5 @@ export class AppController {
     res.sendFile('index.html', { root: 'public' });
   }
 
-  @Get('app.js')
-  getAppJs(@Res() res: Response) {
-    const filePath = join(process.cwd(), 'public', 'app.js');
-    if (existsSync(filePath)) {
-      res.sendFile(filePath);
-    } else {
-      res.status(404).json({ message: 'File not found' });
-    }
-  }
 
 }

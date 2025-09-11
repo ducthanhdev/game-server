@@ -589,19 +589,22 @@
             <div class="game-controls">
                 <button id="newCaroGameBtn" class="control-btn control-btn-warning">Game mới</button>
                 <button id="playWithAIBtn" class="control-btn control-btn-info">Chơi với máy</button>
-                <button id="findMatchBtn" class="control-btn control-btn-primary">Tìm đối thủ</button>
-                <button id="createGameBtn" class="control-btn control-btn-success">Tạo phòng</button>
-                <button id="joinGameBtn" class="control-btn control-btn-secondary">Tham gia phòng</button>
+                <!-- Removed offline and custom room features -->
             </div>
         </div>
 
         <div class="game-info">
-            <div class="status" id="caroStatus">Chọn "Tìm đối thủ" để bắt đầu</div>
+            <div class="status" id="caroStatus">Chọn "Game mới" hoặc "Chơi với máy" để bắt đầu</div>
         </div>
 
         <canvas id="caroCanvas" width="600" height="600"></canvas>
     </div>
 
+    <!-- Load modules in order -->
+    <script src="ui-utils.js"></script>
+    <script src="auth.js"></script>
+    <script src="line98-game.js"></script>
+    <script src="caro-game.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
