@@ -15,7 +15,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function initializeApp() {
-    console.log('Initializing app...');
     
     // Check authentication status
     if (window.checkAuthStatus) {
@@ -30,33 +29,26 @@ function initializeApp() {
 }
 
 function setupEventListeners() {
-    console.log('Setting up event listeners...');
     
     // Auth form toggles
     const showRegisterBtn = document.getElementById('showRegister');
     const showLoginBtn = document.getElementById('showLogin');
     
-    console.log('showRegisterBtn:', showRegisterBtn);
-    console.log('showLoginBtn:', showLoginBtn);
     
     if (showRegisterBtn) {
         showRegisterBtn.addEventListener('click', () => {
-            console.log('Show register clicked');
             document.getElementById('loginForm').style.display = 'none';
             document.getElementById('registerForm').style.display = 'block';
         });
     } else {
-        console.error('showRegisterBtn not found!');
     }
 
     if (showLoginBtn) {
         showLoginBtn.addEventListener('click', () => {
-            console.log('Show login clicked');
             document.getElementById('registerForm').style.display = 'none';
             document.getElementById('loginForm').style.display = 'block';
         });
     } else {
-        console.error('showLoginBtn not found!');
     }
 
     // Auth forms
@@ -105,8 +97,7 @@ function setupEventListeners() {
 // Socket initialization - Disabled for now
 function initializeSocket() {
     // Socket.IO disabled for now - using local game only
-    console.log('Socket.IO disabled - using local game only');
-    socket = null;
+updateupdate    socket = null;
 }
 
 // Game functions

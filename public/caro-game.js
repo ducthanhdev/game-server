@@ -39,14 +39,11 @@ function initializeCaroGame() {
                     return;
                 }
                 
-                // Send move to server
                 if (caroSocket && roomId) {
-                    // Hiển thị loading khi gửi nước đi
                     showLoading('caroStatus', 'Đang gửi nước đi...');
                     caroSocket.emit('room.makeMove', { roomId, x: col, y: row });
                 }
             } else {
-                // AI mode - only allow human player to click
                 if (isAIMode && currentPlayer === aiPlayer) return;
                 makeMove(row, col, currentPlayer);
             }
@@ -426,34 +423,26 @@ function initializeCaroGame() {
     // WebSocket functions
     function connectToCaroServer() {
         const token = localStorage.getItem('token');
-        console.log('Token from localStorage:', token);
         
         if (!token) {
             showError('Vui lòng đăng nhập để chơi online');
             return;
         }
 
-        console.log('Connecting to Caro server with token:', `Bearer ${token}`);
         caroSocket = io('/caro', { 
             auth: { token: `Bearer ${token}` } 
         });
 
         caroSocket.on('connect', () => {
-            console.log('Connected to Caro server');
-            console.log('Socket ID:', caroSocket.id);
-            console.log('Socket data after connect:', caroSocket.data);
             showSuccess('Đã kết nối server');
         });
 
-        // Lắng nghe event từ server để nhận user data
         caroSocket.on('userData', (data) => {
-            console.log('Received userData from server:', data);
             caroSocket.data = caroSocket.data || {};
             caroSocket.data.user = data;
         });
 
         caroSocket.on('disconnect', () => {
-            console.log('Disconnected from Caro server');
             showError('Mất kết nối server');
         });
 
@@ -462,7 +451,6 @@ function initializeCaroGame() {
         });
 
         caroSocket.on('queue.matched', (data) => {
-            console.log('Received queue.matched:', data);
             roomId = data.roomId;
             mySymbol = data.symbol;
             isOnlineMode = true;
@@ -503,29 +491,18 @@ function initializeCaroGame() {
         });
 
         caroSocket.on('room.timeout', (data) => {
-            console.log('Received room.timeout:', data);
             gameOver = true;
             
-            // Hiển thị dialog xác nhận
             try {
                 showTimeoutConfirmation(data);
             } catch (error) {
-                console.error('Error showing timeout confirmation:', error);
-                // Fallback: thoát chế độ online ngay lập tức
                 exitOnlineMode();
                 showError('Đối thủ mất kết nối. Đã chuyển sang chế độ chơi với máy.');
             }
         });
 
         caroSocket.on('room.newGameRequest', (data) => {
-            console.log('Received room.newGameRequest:', data);
-            console.log('Current user ID:', caroSocket.data?.user?.id);
-            console.log('Socket connected:', caroSocket.connected);
-            console.log('Socket data:', caroSocket.data);
-            
-            // Sử dụng window.confirm thay vì confirm
             const userConfirm = window.confirm(`${data.message}\n\nBạn có muốn chơi game mới không?`);
-            console.log('User confirmation result:', userConfirm);
             
             if (userConfirm) {
                 caroSocket.emit('room.confirmNewGame', { roomId: data.roomId });
@@ -537,19 +514,15 @@ function initializeCaroGame() {
         });
 
         caroSocket.on('room.newGameRequestSent', (data) => {
-            console.log('Received room.newGameRequestSent:', data);
             showLoading('caroStatus', data.message);
         });
 
         caroSocket.on('room.newGameConfirmed', (data) => {
-            console.log('Received room.newGameConfirmed:', data);
             showSuccess(data.message);
         });
 
         caroSocket.on('room.newGameRejected', (data) => {
-            console.log('Received room.newGameRejected:', data);
             showError(data.message);
-            // Thoát chế độ online
             isOnlineMode = false;
             isAIMode = true;
             roomId = null;
@@ -559,16 +532,12 @@ function initializeCaroGame() {
         });
 
         caroSocket.on('room.newGame', (data) => {
-            console.log('Received room.newGame:', data);
-            console.log('Current roomId before update:', roomId);
-            console.log('New roomId:', data.roomId);
             roomId = data.roomId;
             mySymbol = data.symbol;
             isOnlineMode = true;
             isAIMode = false;
             gameOver = false;
             
-            // Reset board
             board = Array(15).fill().map(() => Array(15).fill(0));
             currentPlayer = 1;
             
@@ -593,12 +562,10 @@ function initializeCaroGame() {
             connectToCaroServer();
             setTimeout(() => {
                 if (caroSocket) {
-                    console.log('Sending queue.join after connection');
                     caroSocket.emit('queue.join', {});
                 }
             }, 1000);
         } else {
-            console.log('Sending queue.join to existing socket');
             caroSocket.emit('queue.join', {});
         }
     }
@@ -610,26 +577,20 @@ function initializeCaroGame() {
     }
 
     // Game controls
-    // New game button - Always starts with AI mode
     document.getElementById('newCaroGameBtn').addEventListener('click', () => {
         if (isOnlineMode && roomId && caroSocket) {
-            // Đang chơi online - gửi yêu cầu game mới
-            console.log('Sending room.newGame request for room:', roomId);
-            console.log('Socket connected:', caroSocket.connected);
             caroSocket.emit('room.newGame', { roomId });
             return;
         }
         
-        // Reset game state cho AI mode
         board = Array(15).fill().map(() => Array(15).fill(0));
         currentPlayer = 1;
         gameOver = false;
-        isAIMode = true; // Always AI mode
+        isAIMode = true;
         isOnlineMode = false;
         roomId = null;
         mySymbol = null;
         
-        // Redraw board
         drawBoard();
         document.getElementById('caroStatus').textContent = '👤 Lượt của bạn (X)';
         
@@ -647,7 +608,6 @@ function initializeCaroGame() {
         roomId = null;
         mySymbol = null;
         
-        // Redraw board
         drawBoard();
         document.getElementById('caroStatus').textContent = '👤 Lượt của bạn (X)';
         
@@ -678,23 +638,15 @@ function initializeCaroGame() {
 }
 
 function showTimeoutConfirmation(data) {
-    console.log('showTimeoutConfirmation called with data:', data);
-    
-    // Kiểm tra mySymbol có tồn tại không
     if (typeof mySymbol === 'undefined') {
-        console.log('mySymbol is undefined, using fallback');
-        console.error('mySymbol is undefined, using fallback');
-        // Fallback: hiển thị dialog chung
         showConfirmDialog(
             'Mất kết nối',
             'Đối thủ mất kết nối. Bạn có muốn chơi với máy không?',
             () => {
-                console.log('User confirmed: playing with AI');
                 exitOnlineMode();
                 showSuccess('Đã chuyển sang chế độ chơi với máy');
             },
             () => {
-                console.log('User cancelled: exiting online mode');
                 exitOnlineMode();
                 showInfo('Đã thoát chế độ online');
             }
@@ -702,26 +654,19 @@ function showTimeoutConfirmation(data) {
         return;
     }
     
-    console.log('mySymbol:', mySymbol);
     const isWinner = data.winnerSymbol === mySymbol;
     const message = isWinner ? 
         'Đối thủ mất kết nối. Bạn thắng! Bạn có muốn chơi với máy không?' :
         'Bạn mất kết nối. Bạn thua! Bạn có muốn chơi với máy không?';
     
-    console.log('Showing confirm dialog with message:', message);
-    
     showConfirmDialog(
         'Mất kết nối',
         message,
         () => {
-            // Xác nhận chơi với máy
-            console.log('User confirmed: playing with AI');
             exitOnlineMode();
             showSuccess('Đã chuyển sang chế độ chơi với máy');
         },
         () => {
-            // Từ chối, thoát hoàn toàn
-            console.log('User cancelled: exiting online mode');
             exitOnlineMode();
             showInfo('Đã thoát chế độ online');
         }
@@ -729,7 +674,6 @@ function showTimeoutConfirmation(data) {
 }
 
 function exitOnlineMode() {
-    // Thoát chế độ online
     isOnlineMode = false;
     isAIMode = true;
     roomId = null;
@@ -738,17 +682,13 @@ function exitOnlineMode() {
     
     document.getElementById('caroStatus').textContent = 'Chế độ chơi với máy';
     
-    // Reset board
     board = Array(15).fill().map(() => Array(15).fill(0));
     currentPlayer = 1;
     
-    // Gọi drawBoard để vẽ lại board
     drawBoard();
 }
 
-// Test function để kiểm tra dialog
 function testTimeoutDialog() {
-    // Set mySymbol để test
     mySymbol = 'X';
     
     const testData = {
@@ -761,7 +701,6 @@ function testTimeoutDialog() {
     showTimeoutConfirmation(testData);
 }
 
-// Global drawBoard function
 function drawBoard() {
     const canvas = document.getElementById('caroCanvas');
     if (!canvas) return;

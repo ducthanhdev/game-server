@@ -79,7 +79,6 @@ function checkAuthStatus() {
         })
         .then(response => {
             if (!response.ok) {
-                console.log('Token validation failed:', response.status, response.statusText);
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
             return response.json();
@@ -90,7 +89,6 @@ function checkAuthStatus() {
             initializeSocket();
         })
         .catch(error => {
-            console.log('Token validation error:', error);
             localStorage.removeItem('token');
             showAuthScreen();
         });

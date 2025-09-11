@@ -284,25 +284,17 @@ export class CaroService {
    */
   startTurnTimeout(roomId: string, timeoutCallback: () => void): void {
     const state = this.rooms.get(roomId);
-    if (!state || state.status !== 'playing') {
-      console.log(`Cannot start timeout for room ${roomId}: state not found or not playing`);
-      return;
-    }
+    if (!state || state.status !== 'playing') return;
 
-    // Clear timeout cũ nếu có
     if (state.turnTimeout) {
       clearTimeout(state.turnTimeout);
-      console.log(`Cleared old timeout for room ${roomId}`);
     }
 
-    // Set timeout mới (30 giây)
     state.turnTimeout = setTimeout(() => {
-      console.log(`Turn timeout triggered for room ${roomId}`);
       timeoutCallback();
-    }, 30000); // 30 seconds
+    }, 30000);
 
     state.lastMoveTime = Date.now();
-    console.log(`Started 30s timeout for room ${roomId}, turn: ${state.turn}`);
   }
 
   /**
@@ -369,14 +361,10 @@ export class CaroService {
     const state = this.rooms.get(roomId);
     if (!state) return;
 
-    // Dừng timeout nếu có
     this.stopTurnTimeout(roomId);
-
-    // Cập nhật trạng thái game
     state.status = 'ended';
     state.winner = { userId: winnerId, symbol: winnerSymbol };
 
-    // Lưu vào database
     try {
       const match = new this.caroMatchModel({
         roomId: state.roomId,
@@ -389,13 +377,10 @@ export class CaroService {
       });
 
       await match.save();
-      console.log(`Game saved to database: ${roomId}`);
     } catch (error) {
       console.error('Error saving game to database:', error);
     }
 
-    // Xóa phòng khỏi memory
     this.rooms.delete(roomId);
-    console.log(`Room ${roomId} deleted from memory`);
   }
 }

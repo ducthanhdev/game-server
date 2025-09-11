@@ -32,81 +32,54 @@ export class CaroGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {}
 
   async handleConnection(client: Socket) {
-    console.log(`Caro client connected: ${client.id}`);
-    
-    // Xác thực JWT khi kết nối
     try {
       const token = this.extractTokenFromSocket(client);
-      console.log('Extracted token:', token ? 'Token found' : 'No token');
       
       if (!token) {
-        console.log('No token provided for WebSocket connection');
         client.data.user = null;
         return;
       }
 
-      // Verify token
       const payload = await this.jwtService.verifyAsync(token, {
         secret: 'your-secret-key',
       });
 
-      // Gắn user vào client data
       client.data.user = {
         id: payload.sub,
         username: payload.username,
       };
 
-      // Cập nhật socket cho user trong matchmaking service
       this.matchmakingService.updateUserSocket(payload.sub, client);
 
-      // Gửi user data đến client
       client.emit('userData', {
         id: payload.sub,
         username: payload.username,
       });
-
-      console.log(`WebSocket authenticated user: ${payload.sub}`);
     } catch (error) {
-      console.log('WebSocket authentication failed:', error.message);
-      console.log('Token that failed:', this.extractTokenFromSocket(client));
       client.data.user = null;
     }
   }
 
   private extractTokenFromSocket(client: Socket): string | null {
-    console.log('Handshake auth:', client.handshake.auth);
-    console.log('Handshake headers:', client.handshake.headers);
-    console.log('Handshake query:', client.handshake.query);
-    
-    // Thử lấy từ auth
     if (client.handshake.auth?.token) {
       const token = client.handshake.auth.token;
-      console.log('Token from auth:', token);
       return token.startsWith('Bearer ') ? token.substring(7) : token;
     }
 
-    // Thử lấy từ headers
     const authHeader = client.handshake.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
-      console.log('Token from headers:', authHeader);
       return authHeader.substring(7);
     }
 
-    // Thử lấy từ query
     if (client.handshake.query?.token) {
       const token = client.handshake.query.token as string;
-      console.log('Token from query:', token);
       return token.startsWith('Bearer ') ? token.substring(7) : token;
     }
 
-    console.log('No token found in any location');
     return null;
   }
 
   handleDisconnect(client: Socket) {
-    console.log(`Caro client disconnected: ${client.id}`);
-    
-    // Xóa user khỏi matchmaking queue
     const userId = client.data.user?.id;
     if (userId) {
       this.matchmakingService.removeUser(userId);
@@ -126,12 +99,10 @@ export class CaroGateway implements OnGatewayConnection, OnGatewayDisconnect {
         return;
       }
 
-      console.log(`User ${userId} joining queue`);
       
       // Kiểm tra user đã có trong queue chưa
       const queueInfo = this.matchmakingService.getQueueInfo();
       if (queueInfo.users.includes(userId)) {
-        console.log(`User ${userId} already in queue`);
         client.emit('queue.waiting', { message: 'Bạn đã trong hàng đợi...' });
         return;
       }
@@ -151,9 +122,7 @@ export class CaroGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       // Join room cho cả 2 người chơi
       const sockets = this.matchmakingService.getSockets([xUserId, oUserId]);
-      console.log(`Found ${sockets.length} sockets for users [${xUserId}, ${oUserId}]`);
       sockets.forEach(socket => {
-        console.log(`Joining room ${roomState.roomId} for socket ${socket.id}`);
         socket.join(roomState.roomId);
       });
 
@@ -164,11 +133,6 @@ export class CaroGateway implements OnGatewayConnection, OnGatewayDisconnect {
           { userId: oUserId, username: 'Opponent' } : 
           { userId: xUserId, username: 'Opponent' };
 
-        console.log(`Sending queue.matched to ${socket.data.user.id}:`, {
-          roomId: roomState.roomId,
-          symbol,
-          opponent,
-        });
 
         socket.emit('queue.matched', {
           roomId: roomState.roomId,
@@ -177,7 +141,6 @@ export class CaroGateway implements OnGatewayConnection, OnGatewayDisconnect {
         });
 
         // Gửi trạng thái ban đầu
-        console.log(`Sending room.update to ${socket.data.user.id}`);
         socket.emit('room.update', {
           board: roomState.board,
           turn: roomState.turn,
@@ -185,7 +148,6 @@ export class CaroGateway implements OnGatewayConnection, OnGatewayDisconnect {
         });
       });
 
-      console.log(`Match created: ${xUserId} vs ${oUserId} in room ${roomState.roomId}`);
       
       // Xóa sockets khỏi matchmaking sau khi tạo phòng thành công
       this.matchmakingService.removeMatchedUsers([xUserId, oUserId]);
@@ -246,7 +208,6 @@ export class CaroGateway implements OnGatewayConnection, OnGatewayDisconnect {
         // Lưu kết quả vào database
         await this.caroService.endGame(roomId, winnerUserId, winnerSymbol);
         
-        console.log(`Game ended: ${winnerSymbol} (${winnerUserId}) won in room ${roomId}`);
       } else {
         // Bắt đầu timeout cho lượt tiếp theo
         this.caroService.startTurnTimeout(roomId, () => {
@@ -294,7 +255,6 @@ export class CaroGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       await this.caroService.endAndPersist(roomId, winnerUserId, winnerSymbol);
       
-      console.log(`Game ended by resignation: ${winnerSymbol} (${winnerUserId}) won in room ${roomId}`);
     } catch (error) {
       console.error('Error in room.resign:', error);
       client.emit('room.error', { code: 'RESIGN_ERROR', message: 'Lỗi khi xin thua' });
@@ -335,7 +295,6 @@ export class CaroGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
 
       const { roomId } = data;
-      console.log(`Received room.newGame request from ${userId} for room ${roomId}`);
       
       // Yêu cầu game mới
       const requestResult = this.caroService.requestNewGame(roomId, userId);
@@ -354,19 +313,15 @@ export class CaroGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       const opponentId = state.players.xUserId === userId ? state.players.oUserId : state.players.xUserId;
       const opponentSockets = this.matchmakingService.getSockets([opponentId]);
-      console.log(`Looking for opponent ${opponentId}, found ${opponentSockets.length} sockets`);
       
       if (opponentSockets.length > 0) {
         const opponentSocket = opponentSockets[0];
-        console.log(`Sending newGameRequest to opponent ${opponentId} (socket: ${opponentSocket.id})`);
-        console.log(`Opponent socket connected: ${opponentSocket.connected}`);
         opponentSocket.emit('room.newGameRequest', {
           roomId,
           requestedBy: userId,
           message: 'Người chơi muốn tạo game mới. Bạn có đồng ý không?'
         });
       } else {
-        console.log(`No socket found for opponent ${opponentId}`);
         client.emit('room.error', { code: 'OPPONENT_NOT_FOUND', message: 'Đối thủ không còn kết nối' });
         return;
       }
@@ -396,7 +351,6 @@ export class CaroGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
 
       const { roomId } = data;
-      console.log(`Received room.confirmNewGame from ${userId} for room ${roomId}`);
       
       // Xác nhận game mới
       const confirmResult = this.caroService.confirmNewGame(roomId, userId);
@@ -424,7 +378,6 @@ export class CaroGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       // Nếu cả 2 người đã xác nhận, tạo game mới
       if (confirmResult.shouldCreate) {
-        console.log(`Both players confirmed, creating new game for room ${roomId}`);
         await this.createNewGameAfterConfirmation(roomId, state);
       }
 
@@ -447,7 +400,6 @@ export class CaroGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
 
       const { roomId } = data;
-      console.log(`Received room.rejectNewGame from ${userId} for room ${roomId}`);
       
       // Từ chối game mới
       const rejectResult = this.caroService.rejectNewGame(roomId, userId);
@@ -495,9 +447,7 @@ export class CaroGateway implements OnGatewayConnection, OnGatewayDisconnect {
       
       // Join room mới cho cả 2 người chơi
       const sockets = this.matchmakingService.getSockets([oldState.players.xUserId, oldState.players.oUserId]);
-      console.log(`Found ${sockets.length} sockets for new game:`, sockets.map(s => s.data.user.id));
       sockets.forEach(socket => {
-        console.log(`Joining new room ${newRoomState.roomId} for socket ${socket.id}`);
         socket.join(newRoomState.roomId);
       });
 
@@ -508,11 +458,6 @@ export class CaroGateway implements OnGatewayConnection, OnGatewayDisconnect {
           { userId: newRoomState.players.oUserId, username: 'Opponent' } : 
           { userId: newRoomState.players.xUserId, username: 'Opponent' };
 
-        console.log(`Sending room.newGame to ${socket.data.user.id}:`, { 
-          roomId: newRoomState.roomId, 
-          symbol, 
-          opponent 
-        });
 
         socket.emit('room.newGame', {
           roomId: newRoomState.roomId,
@@ -520,7 +465,6 @@ export class CaroGateway implements OnGatewayConnection, OnGatewayDisconnect {
           opponent,
         });
 
-        console.log(`Sending room.update to ${socket.data.user.id}`);
         socket.emit('room.update', {
           board: newRoomState.board,
           turn: newRoomState.turn,
@@ -533,7 +477,6 @@ export class CaroGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.handleTurnTimeout(newRoomState.roomId);
       });
 
-      console.log(`New game created: ${newRoomState.players.xUserId} vs ${newRoomState.players.oUserId} in room ${newRoomState.roomId}`);
     } catch (error) {
       console.error('Error creating new game after confirmation:', error);
     }
@@ -544,29 +487,23 @@ export class CaroGateway implements OnGatewayConnection, OnGatewayDisconnect {
    */
   private handleTurnTimeout(roomId: string): void {
     try {
-      console.log(`Handling turn timeout for room ${roomId}`);
       
       const state = this.caroService.getState(roomId);
       if (!state || state.status !== 'playing') {
-        console.log(`Room ${roomId} not found or not playing, skipping timeout handling`);
         return;
       }
 
-      console.log(`Turn timeout for room ${roomId}, current turn: ${state.turn}`);
 
       // Xác định người chơi bị timeout
       const currentPlayerId = state.turn === 1 ? state.players.xUserId : state.players.oUserId;
       const winnerId = state.turn === 1 ? state.players.oUserId : state.players.xUserId;
       const winnerSymbol = state.turn === 1 ? 'O' : 'X';
 
-      console.log(`Timeout player: ${currentPlayerId}, Winner: ${winnerId} (${winnerSymbol})`);
 
       // Gửi thông báo timeout đến cả 2 người chơi
       const sockets = this.matchmakingService.getSockets([state.players.xUserId, state.players.oUserId]);
-      console.log(`Found ${sockets.length} sockets for timeout notification`);
       
       sockets.forEach(socket => {
-        console.log(`Sending timeout notification to socket ${socket.id}`);
         socket.emit('room.timeout', {
           roomId,
           timeoutPlayerId: currentPlayerId,
@@ -582,7 +519,6 @@ export class CaroGateway implements OnGatewayConnection, OnGatewayDisconnect {
       // Xóa sockets khỏi matchmaking
       this.matchmakingService.removeMatchedUsers([state.players.xUserId, state.players.oUserId]);
 
-      console.log(`Timeout handling completed for room ${roomId}`);
 
     } catch (error) {
       console.error('Error handling turn timeout:', error);

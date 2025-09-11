@@ -15,7 +15,6 @@ export class JwtWsGuard implements CanActivate {
       const token = this.extractTokenFromSocket(client);
       
       if (!token) {
-        console.log('No token provided for WebSocket connection');
         client.data.user = null;
         return false;
       }
@@ -31,10 +30,8 @@ export class JwtWsGuard implements CanActivate {
         username: payload.username,
       };
 
-      console.log(`WebSocket authenticated user: ${payload.sub}`);
       return true;
     } catch (error) {
-      console.log('WebSocket authentication failed:', error.message);
       client.data.user = null;
       return false;
     }

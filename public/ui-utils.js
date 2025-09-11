@@ -193,14 +193,10 @@ function showCountdownTimer(seconds) {
 }
 
 function showConfirmDialog(title, message, onConfirm, onCancel) {
-    console.log('showConfirmDialog called with:', { title, message });
-    
-    // Tạo overlay
     const overlay = document.createElement('div');
     overlay.className = 'toast-overlay';
     overlay.style.zIndex = '10000';
     
-    // Tạo dialog
     const dialog = document.createElement('div');
     dialog.className = 'confirm-dialog';
     dialog.innerHTML = `
@@ -219,25 +215,18 @@ function showConfirmDialog(title, message, onConfirm, onCancel) {
     overlay.appendChild(dialog);
     document.body.appendChild(overlay);
     
-    console.log('Dialog created and added to DOM');
-    
-    // Xử lý sự kiện
     document.getElementById('confirmOk').onclick = () => {
-        console.log('OK button clicked');
         document.body.removeChild(overlay);
         if (onConfirm) onConfirm();
     };
     
     document.getElementById('confirmCancel').onclick = () => {
-        console.log('Cancel button clicked');
         document.body.removeChild(overlay);
         if (onCancel) onCancel();
     };
     
-    // Đóng khi click overlay
     overlay.onclick = (e) => {
         if (e.target === overlay) {
-            console.log('Overlay clicked');
             document.body.removeChild(overlay);
             if (onCancel) onCancel();
         }

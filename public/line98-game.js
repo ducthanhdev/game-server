@@ -22,8 +22,6 @@ function initializeLine98Game() {
     let nextBalls = [];
     let usePreview = true;
     
-    console.log('Board initialized:', board);
-    console.log('Board length:', board.length, 'First row length:', board[0]?.length);
     
     // Animation state
     let animatingCells = new Set();
@@ -35,12 +33,9 @@ function initializeLine98Game() {
     
     // Initialize board function - moved up for hoisting
     function initBoard() {
-        console.log('initBoard called, board:', board);
-        console.log('ROWS:', ROWS, 'COLS:', COLS);
         
         // Ensure board is properly initialized
         if (!board || !Array.isArray(board) || board.length !== ROWS) {
-            console.log('Reinitializing board...');
             board = [];
             for (let i = 0; i < ROWS; i++) {
                 board[i] = [];
@@ -57,14 +52,11 @@ function initializeLine98Game() {
             }
         }
         
-        console.log('Board cleared, spawning balls...');
         
         // Spawn initial balls (5-7 balls)
         const initialCount = 5 + randInt(3);
-        console.log('Spawning', initialCount, 'balls');
         spawnRandomBalls(board, initialCount);
         
-        console.log('Board after spawning:', board);
         
         // Remove any initial lines
         const initialLines = collectAllLines(board);
@@ -775,7 +767,6 @@ function initializeLine98Game() {
         if (validMoves.length === 0) {
             isGameOver = true;
             showSuccess(`🎮 Game Over! Điểm cuối: ${score}`);
-            console.log('🎮 Game Over - No valid moves available');
         }
     }
     

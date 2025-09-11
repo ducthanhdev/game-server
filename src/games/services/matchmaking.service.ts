@@ -42,8 +42,6 @@ export class MatchmakingService {
     if (this.queue.length >= 2) {
       const [player1, player2] = this.queue.splice(0, 2);
       
-      console.log(`Matchmaking: ${player1.userId} vs ${player2.userId}`);
-      console.log(`Current user: ${userId}, returning opponent: ${player1.userId}`);
       
       // KHÔNG xóa khỏi user socket map ngay lập tức
       // Sẽ xóa sau khi tạo phòng thành công
@@ -85,12 +83,10 @@ export class MatchmakingService {
     const sockets = userIds
       .map(id => {
         const socket = this.userSocketMap.get(id);
-        console.log(`Getting socket for user ${id}:`, socket ? `Socket ${socket.id} (connected: ${socket.connected})` : 'No socket found');
         return socket;
       })
       .filter(socket => socket !== undefined) as Socket[];
     
-    console.log(`getSockets for users [${userIds.join(', ')}]: found ${sockets.length} sockets`);
     return sockets;
   }
 
