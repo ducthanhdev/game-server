@@ -130,6 +130,120 @@ function showGame(gameType) {
 }
 
 // Export functions
+// Loading and waiting indicators
+function showLoading(elementId, message = 'Đang tải...') {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+    
+    const loadingHtml = `
+        <span class="waiting-indicator">
+            ${message}
+            <div class="waiting-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </span>
+    `;
+    
+    element.innerHTML = loadingHtml;
+}
+
+function hideLoading(elementId, defaultText = '') {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+    
+    element.innerHTML = defaultText;
+}
+
+function showWaitingForOpponent() {
+    const statusElement = document.getElementById('caroStatus');
+    if (!statusElement) return;
+    
+    const waitingHtml = `
+        <span class="waiting-indicator">
+            Đang chờ đối thủ đi...
+            <div class="waiting-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </span>
+    `;
+    
+    statusElement.innerHTML = waitingHtml;
+}
+
+function showCountdownTimer(seconds) {
+    const statusElement = document.getElementById('caroStatus');
+    if (!statusElement) return;
+    
+    const timerHtml = `
+        <span class="waiting-indicator">
+            Đang chờ đối thủ đi... (${seconds}s)
+            <div class="waiting-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </span>
+    `;
+    
+    statusElement.innerHTML = timerHtml;
+}
+
+function showConfirmDialog(title, message, onConfirm, onCancel) {
+    console.log('showConfirmDialog called with:', { title, message });
+    
+    // Tạo overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'toast-overlay';
+    overlay.style.zIndex = '10000';
+    
+    // Tạo dialog
+    const dialog = document.createElement('div');
+    dialog.className = 'confirm-dialog';
+    dialog.innerHTML = `
+        <div class="confirm-header">
+            <h3>${title}</h3>
+        </div>
+        <div class="confirm-body">
+            <p>${message}</p>
+        </div>
+        <div class="confirm-footer">
+            <button class="btn btn-secondary" id="confirmCancel">Hủy</button>
+            <button class="btn btn-primary" id="confirmOk">OK</button>
+        </div>
+    `;
+    
+    overlay.appendChild(dialog);
+    document.body.appendChild(overlay);
+    
+    console.log('Dialog created and added to DOM');
+    
+    // Xử lý sự kiện
+    document.getElementById('confirmOk').onclick = () => {
+        console.log('OK button clicked');
+        document.body.removeChild(overlay);
+        if (onConfirm) onConfirm();
+    };
+    
+    document.getElementById('confirmCancel').onclick = () => {
+        console.log('Cancel button clicked');
+        document.body.removeChild(overlay);
+        if (onCancel) onCancel();
+    };
+    
+    // Đóng khi click overlay
+    overlay.onclick = (e) => {
+        if (e.target === overlay) {
+            console.log('Overlay clicked');
+            document.body.removeChild(overlay);
+            if (onCancel) onCancel();
+        }
+    };
+}
+
 window.showToast = showToast;
 window.closeToast = closeToast;
 window.showError = showError;
@@ -139,3 +253,8 @@ window.showInfo = showInfo;
 window.showAuthScreen = showAuthScreen;
 window.showGameSelection = showGameSelection;
 window.showGame = showGame;
+window.showLoading = showLoading;
+window.hideLoading = hideLoading;
+window.showWaitingForOpponent = showWaitingForOpponent;
+window.showCountdownTimer = showCountdownTimer;
+window.showConfirmDialog = showConfirmDialog;
