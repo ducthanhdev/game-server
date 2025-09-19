@@ -12,6 +12,9 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    overflow-x: hidden; /* Prevent horizontal scroll */
+    overflow-y: auto; /* Allow vertical scroll */
+    touch-action: pan-y; /* Allow vertical scrolling */
 }
 
 .container {
@@ -423,6 +426,12 @@ canvas {
     background: #f8f9fa;
     max-width: 100%;
     height: auto;
+    touch-action: none; /* Prevent zoom and scroll on canvas only */
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
 
 #line98Canvas {
@@ -430,6 +439,75 @@ canvas {
     height: 450px;
     max-width: calc(100vw - 40px);
     max-height: calc(100vh - 300px);
+}
+
+/* Mobile First Responsive */
+@media (max-width: 768px) {
+    #line98Canvas {
+        width: calc(100vw - 20px);
+        height: calc(100vw - 20px);
+        max-width: 400px;
+        max-height: 400px;
+    }
+    
+    .game-container {
+        padding: 15px;
+    }
+    
+    .control-btn {
+        padding: 10px 16px;
+        font-size: 14px;
+    }
+    
+    .game-controls {
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    #line98Canvas {
+        width: calc(100vw - 10px);
+        height: calc(100vw - 10px);
+        max-width: 350px;
+        max-height: 350px;
+    }
+    
+    .game-controls {
+        flex-direction: column;
+        gap: 10px;
+        align-items: center;
+    }
+    
+    .control-btn {
+        width: 100%;
+        max-width: 200px;
+        padding: 15px 20px;
+        font-size: 16px;
+        min-height: 44px; /* Touch-friendly size */
+        touch-action: manipulation;
+    }
+    
+    .game-container {
+        overflow-y: auto; /* Allow scrolling in game container */
+        touch-action: pan-y; /* Allow vertical scrolling */
+    }
+    
+    .game-info {
+        margin: 10px 0;
+        padding: 10px;
+        font-size: 14px;
+    }
+    
+    .game-header {
+        padding: 10px;
+    }
+    
+    .game-title-header {
+        font-size: 24px;
+        margin-bottom: 15px;
+    }
 }
 
 .game-info {

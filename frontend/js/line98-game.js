@@ -754,16 +754,40 @@ function drawArrow(ctx, fromx, fromy, tox, toy, color) {
     ctx.stroke();
 }
 
+// Handle touch events for mobile
+function handleLine98CanvasTouch(event) {
+    // Only prevent default if touch is within canvas bounds
+    const canvas = document.getElementById('line98Canvas');
+    const rect = canvas.getBoundingClientRect();
+    const touch = event.changedTouches[0];
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
+    
+    // Check if touch is within canvas bounds
+    if (x >= 0 && x <= rect.width && y >= 0 && y <= rect.height) {
+        event.preventDefault(); // Only prevent default for canvas touches
+        handleCanvasInteraction(canvas, x, y);
+    }
+}
+
 // Canvas click handler
 function handleLine98CanvasClick(event) {
-    if (!line98GameState || line98GameState.isGameOver) return;
-
     const canvas = document.getElementById('line98Canvas');
     const rect = canvas.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
     
-    const cellSize = 50;
+    handleCanvasInteraction(canvas, x, y);
+}
+
+// Common interaction handler for both click and touch
+function handleCanvasInteraction(canvas, x, y) {
+    if (!line98GameState || line98GameState.isGameOver) return;
+
+    // Calculate cell size based on current canvas size for responsive
+    const canvasWidth = canvas.offsetWidth;
+    const cellSize = canvasWidth / 9; // Dynamic cell size
+    
     const col = Math.floor(x / cellSize);
     const row = Math.floor(y / cellSize);
 
@@ -826,7 +850,12 @@ function animationLoop() {
 document.addEventListener('DOMContentLoaded', function() {
     const canvas = document.getElementById('line98Canvas');
     if (canvas) {
+        // Add both click and touch events for better mobile support
         canvas.addEventListener('click', handleLine98CanvasClick);
+        canvas.addEventListener('touchend', handleLine98CanvasTouch);
+        
+        // Prevent context menu on long press
+        canvas.addEventListener('contextmenu', e => e.preventDefault());
     }
     
     // Start animation loop
