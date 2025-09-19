@@ -1,20 +1,17 @@
-// Line 98 Game - Frontend thuần với API calls
 let line98GameState = null;
 let currentGameId = null;
-
-// Animation state
 let animations = {
-    moving: null,           // {fromRow, fromCol, toRow, toCol, progress, duration}
-    spawning: [],          // [{row, col, scale, opacity}]
-    clearing: [],          // [{row, col, scale, opacity}]
-    invalidMove: null,     // {row, col, shakeTime, duration} for invalid move shake
-    pathPreview: [],       // [{row, col, opacity}] for showing invalid path
-    pulseTime: 0          // For selection pulse effect
+    moving: null,
+    spawning: [],
+    clearing: [],
+    invalidMove: null,
+    pathPreview: [],
+    pulseTime: 0
 };
 
 let lastFrameTime = 0;
 
-// Enhanced ball drawing with gradient and shadow
+// Ball Drawing Functions
 function drawEnhancedBall(ctx, x, y, radius, colorIndex, options = {}) {
     const {
         scale = 1,
@@ -25,19 +22,18 @@ function drawEnhancedBall(ctx, x, y, radius, colorIndex, options = {}) {
     } = options;
     
     const colors = [
-        { primary: '#ff6b6b', secondary: '#ff5252', shadow: '#d32f2f' }, // Red
-        { primary: '#4ecdc4', secondary: '#26a69a', shadow: '#00695c' }, // Teal  
-        { primary: '#45b7d1', secondary: '#2196f3', shadow: '#1565c0' }, // Blue
-        { primary: '#96ceb4', secondary: '#66bb6a', shadow: '#2e7d32' }, // Green
-        { primary: '#feca57', secondary: '#ffeb3b', shadow: '#f57f17' }, // Yellow
-        { primary: '#ff9ff3', secondary: '#e91e63', shadow: '#ad1457' }, // Pink
-        { primary: '#54a0ff', secondary: '#3f51b5', shadow: '#1a237e' }  // Indigo
+        { primary: '#ff6b6b', secondary: '#ff5252', shadow: '#d32f2f' },
+        { primary: '#4ecdc4', secondary: '#26a69a', shadow: '#00695c' },
+        { primary: '#45b7d1', secondary: '#2196f3', shadow: '#1565c0' },
+        { primary: '#96ceb4', secondary: '#66bb6a', shadow: '#2e7d32' },
+        { primary: '#feca57', secondary: '#ffeb3b', shadow: '#f57f17' },
+        { primary: '#ff9ff3', secondary: '#e91e63', shadow: '#ad1457' },
+        { primary: '#54a0ff', secondary: '#3f51b5', shadow: '#1a237e' }
     ];
     
     const color = colors[colorIndex - 1] || colors[0];
     const finalRadius = radius * scale;
     
-    // Pulse effect for selection
     let pulseScale = 1;
     if (pulse) {
         pulseScale = 1 + Math.sin(pulseTime * 0.008) * 0.1;
@@ -47,7 +43,6 @@ function drawEnhancedBall(ctx, x, y, radius, colorIndex, options = {}) {
     ctx.save();
     ctx.globalAlpha = opacity;
     
-    // Glow effect
     if (glow) {
         ctx.shadowColor = color.primary;
         ctx.shadowBlur = 15;
@@ -55,13 +50,11 @@ function drawEnhancedBall(ctx, x, y, radius, colorIndex, options = {}) {
         ctx.shadowOffsetY = 0;
     }
     
-    // Drop shadow
     ctx.beginPath();
     ctx.arc(x + 2, y + 2, actualRadius, 0, 2 * Math.PI);
     ctx.fillStyle = `rgba(0, 0, 0, ${0.3 * opacity})`;
     ctx.fill();
     
-    // Main ball with gradient
     const gradient = ctx.createRadialGradient(
         x - actualRadius * 0.3, y - actualRadius * 0.3, 0,
         x, y, actualRadius
@@ -75,7 +68,6 @@ function drawEnhancedBall(ctx, x, y, radius, colorIndex, options = {}) {
     ctx.fillStyle = gradient;
     ctx.fill();
     
-    // Highlight
     const highlightGradient = ctx.createRadialGradient(
         x - actualRadius * 0.4, y - actualRadius * 0.4, 0,
         x - actualRadius * 0.4, y - actualRadius * 0.4, actualRadius * 0.6
@@ -88,7 +80,6 @@ function drawEnhancedBall(ctx, x, y, radius, colorIndex, options = {}) {
     ctx.fillStyle = highlightGradient;
     ctx.fill();
     
-    // Border
     ctx.beginPath();
     ctx.arc(x, y, actualRadius, 0, 2 * Math.PI);
     ctx.strokeStyle = `rgba(0, 0, 0, ${0.4 * opacity})`;
@@ -98,7 +89,7 @@ function drawEnhancedBall(ctx, x, y, radius, colorIndex, options = {}) {
     ctx.restore();
 }
 
-// Animation functions
+// Animation Functions
 function easeInOutCubic(t) {
     return t < 0.5 ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1;
 }
@@ -110,7 +101,7 @@ function startMoveAnimation(fromRow, fromCol, toRow, toCol) {
         toRow,
         toCol,
         progress: 0,
-        duration: 300 // 300ms
+        duration: 300
     };
 }
 
@@ -120,7 +111,7 @@ function startSpawnAnimation(cells) {
         col,
         scale: 0,
         opacity: 0,
-        startTime: Date.now() + Math.random() * 200 // Stagger spawning
+        startTime: Date.now() + Math.random() * 200
     }));
 }
 
@@ -136,15 +127,13 @@ function startClearAnimation(cells) {
 
 function startInvalidMoveAnimation(fromRow, fromCol, toRow, toCol) {
     try {
-        // Shake animation for the selected ball
         animations.invalidMove = {
             row: fromRow,
             col: fromCol,
             shakeTime: 0,
-            duration: 600 // 600ms shake
+            duration: 600
         };
         
-        // Red flash effect for target cell
         animations.pathPreview = [{
             row: toRow,
             col: toCol,
@@ -161,7 +150,6 @@ function startInvalidMoveAnimation(fromRow, fromCol, toRow, toCol) {
 function updateAnimations(deltaTime) {
     const currentTime = Date.now();
     
-    // Update moving animation
     if (animations.moving) {
         animations.moving.progress += deltaTime / animations.moving.duration;
         if (animations.moving.progress >= 1) {
@@ -169,7 +157,6 @@ function updateAnimations(deltaTime) {
         }
     }
     
-    // Update invalid move animation (shake effect)
     if (animations.invalidMove) {
         animations.invalidMove.shakeTime += deltaTime;
         if (animations.invalidMove.shakeTime >= animations.invalidMove.duration) {
@@ -177,27 +164,23 @@ function updateAnimations(deltaTime) {
         }
     }
     
-    // Update path preview (error flash)
     animations.pathPreview = animations.pathPreview.filter(anim => {
         const elapsed = currentTime - anim.startTime;
         const progress = Math.min(elapsed / anim.duration, 1);
         
         if (anim.isError) {
-            // Flash red effect - quick fade
             anim.opacity = Math.max(0, 1 - progress);
         } else {
-            // Normal path preview
             anim.opacity = Math.sin(progress * Math.PI * 3) * 0.5 + 0.5;
         }
         
         return progress < 1;
     });
     
-    // Update spawning animations
     animations.spawning = animations.spawning.filter(anim => {
         if (currentTime >= anim.startTime) {
             const elapsed = currentTime - anim.startTime;
-            const progress = Math.min(elapsed / 400, 1); // 400ms duration
+            const progress = Math.min(elapsed / 400, 1);
             anim.scale = easeInOutCubic(progress);
             anim.opacity = progress;
             return progress < 1;
@@ -205,32 +188,27 @@ function updateAnimations(deltaTime) {
         return true;
     });
     
-    // Update clearing animations
     animations.clearing = animations.clearing.filter(anim => {
         const elapsed = currentTime - anim.startTime;
-        const progress = Math.min(elapsed / 500, 1); // 500ms duration
-        anim.scale = 1 + progress * 0.5; // Scale up while fading
+        const progress = Math.min(elapsed / 500, 1);
+        anim.scale = 1 + progress * 0.5;
         anim.opacity = 1 - progress;
         return progress < 1;
     });
     
-    // Update pulse time
     animations.pulseTime += deltaTime;
 }
 
-// Clear old game ID when starting new game
+// Game Management Functions
 function clearLine98Game() {
     currentGameId = null;
     line98GameState = null;
 }
 
-// Game initialization - try to load saved game first
 async function initLine98Game(forceNew = false) {
-    // Clear any existing game
     clearLine98Game();
     
     if (!forceNew) {
-        // Try to load latest saved game first
         try {
             const savedGame = await loadLatestLine98Game();
             if (savedGame) {
@@ -242,11 +220,8 @@ async function initLine98Game(forceNew = false) {
                 return;
             }
         } catch (error) {
-            // Continue to create new game
         }
     }
-    
-    // Create new game if no saved game or force new
     try {
         const response = await fetch(`${window.API_BASE_URL}/games/line98/create`, {
             method: 'POST',
@@ -275,7 +250,6 @@ async function initLine98Game(forceNew = false) {
     }
 }
 
-// Load latest saved game
 async function loadLatestLine98Game() {
     try {
         const response = await fetch(`${window.API_BASE_URL}/games/line98/latest`, {
@@ -296,7 +270,6 @@ async function loadLatestLine98Game() {
     }
 }
 
-// Make a move
 async function makeLine98Move(fromRow, fromCol, toRow, toCol) {
     if (!currentGameId) {
         await initLine98Game();
@@ -321,23 +294,17 @@ async function makeLine98Move(fromRow, fromCol, toRow, toCol) {
         if (response.ok) {
             const game = await response.json();
             
-            // Start move animation before updating state
             startMoveAnimation(fromRow, fromCol, toRow, toCol);
             
-            // Wait for animation to complete, then update state
             setTimeout(() => {
-                // Save old board state to detect cleared balls
                 const oldBoard = line98GameState ? [...line98GameState.board.map(row => [...row])] : null;
                 
                 line98GameState = game.gameState;
                 
-                // Detect cleared balls and start clear animation
                 if (oldBoard && game.clearedCells) {
                     startClearAnimation(game.clearedCells);
                     
-                    // Wait for clear animation, then spawn new balls
                     setTimeout(() => {
-                        // Check if balls were spawned and start spawn animation
                         const newBalls = [];
                         if (game.gameState.board) {
                             for (let row = 0; row < 9; row++) {
@@ -351,13 +318,11 @@ async function makeLine98Move(fromRow, fromCol, toRow, toCol) {
                             }
                         }
                         
-                        // Start spawn animation for new balls
                         if (newBalls.length > 0) {
                             startSpawnAnimation(newBalls);
                         }
-                    }, 250); // Wait for clear animation to show
+                    }, 250);
                 } else {
-                    // No cleared balls, check for spawned balls immediately
                     const newBalls = [];
                     if (game.gameState.board && oldBoard) {
                         for (let row = 0; row < 9; row++) {
@@ -371,22 +336,19 @@ async function makeLine98Move(fromRow, fromCol, toRow, toCol) {
                         }
                     }
                     
-                    // Start spawn animation for new balls
                     if (newBalls.length > 0) {
                         startSpawnAnimation(newBalls);
                     }
                 }
                 
                 updateLine98Display();
-            }, 300); // Match animation duration
+            }, 300);
         } else {
             try {
                 const error = await response.json();
                 
-                // Show invalid move animation
                 startInvalidMoveAnimation(fromRow, fromCol, toRow, toCol);
                 
-                // Show appropriate error message
                 if (error.message === 'No valid path found') {
                     showError('🚫 Không thể di chuyển đến vị trí này!');
                 } else {
