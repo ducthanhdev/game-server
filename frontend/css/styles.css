@@ -421,6 +421,15 @@ canvas {
     display: block;
     margin: 0 auto;
     background: #f8f9fa;
+    max-width: 100%;
+    height: auto;
+}
+
+#line98Canvas {
+    width: 450px;
+    height: 450px;
+    max-width: calc(100vw - 40px);
+    max-height: calc(100vh - 300px);
 }
 
 .game-info {
