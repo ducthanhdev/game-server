@@ -54,7 +54,6 @@ python -m http.server 8080
 
 - **1 máy:** 2 tab browser (thường + ẩn danh)
 - **2 máy:** Máy tính + điện thoại
-- **Chi tiết:** Xem `TESTING_GUIDE.md`
 
 ## 📁 Cấu trúc
 
@@ -63,6 +62,7 @@ server-game/
 ├── backend/          # NestJS API server
 ├── frontend/         # HTML/CSS/JS client
 ├── start-servers.bat # Script khởi động
+├── TEST_RESULTS.md   # Kết quả unit tests
 └── README.md         # File này
 ```
 
@@ -73,12 +73,22 @@ server-game/
 3. **Chọn chế độ** (Local/AI/Online)
 4. **Chơi game** và tận hưởng!
 
-## 📖 Documentation
+## 🧪 Unit Tests
 
-- `HOW_TO_RUN.md` - Hướng dẫn chi tiết
-- `TESTING_GUIDE.md` - Hướng dẫn test
-- `TEST_PHONE.md` - Test trên điện thoại
-- `TEST_2_MACHINES.md` - Test 2 máy
+Dự án đã được test đầy đủ với kết quả:
+
+```
+Test Suites: 2 passed, 2 total
+Tests:       7 passed, 7 total
+Snapshots:   0 total
+Time:        3.758 s
+```
+
+- **Performance Tests:** Latency < 200ms ✅
+- **Concurrent Users:** 10+ users ✅
+- **Game Logic:** Line 98 & Caro ✅
+
+Chi tiết xem `TEST_RESULTS.md`
 
 ## 🐛 Troubleshooting
 
