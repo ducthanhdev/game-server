@@ -1,6 +1,4 @@
-// Global configuration
-// For LAN testing, replace localhost with your machine's IP
-// Example: const API_BASE_URL = 'http://192.168.1.100:3000';
+// Local configuration (for single machine testing)
 const API_BASE_URL = 'http://localhost:3000';
 const WS_BASE_URL = 'ws://localhost:3000';
 

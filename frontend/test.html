@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Connection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .success {
+            color: #28a745;
+            font-size: 24px;
+            margin: 20px 0;
+        }
+        .info {
+            background: #d1ecf1;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Game Server Test</h1>
+        <div class="success">✅ Frontend server đang chạy!</div>
+        
+        <div class="info">
+            <h3>📋 Thông tin kết nối:</h3>
+            <p><strong>Frontend:</strong> http://192.168.0.106:8080</p>
+            <p><strong>Backend:</strong> http://192.168.0.106:3000</p>
+            <p><strong>Game:</strong> <a href="index.html">Chơi game</a></p>
+        </div>
+        
+        <button onclick="testBackend()">🔍 Test Backend</button>
+        <button onclick="window.location.href='index.html'">🎮 Chơi Game</button>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        async function testBackend() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>⏳ Đang kiểm tra backend...</p>';
+            
+            try {
+                const response = await fetch('http://192.168.0.106:3000/auth/profile');
+                if (response.status === 401) {
+                    resultDiv.innerHTML = '<p style="color: green;">✅ Backend hoạt động bình thường! (401 - cần đăng nhập)</p>';
+                } else {
+                    resultDiv.innerHTML = `<p style="color: green;">✅ Backend hoạt động! (Status: ${response.status})</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: red;">❌ Lỗi kết nối backend: ${error.message}</p>`;
+            }
+        }
+        
+        // Auto-test backend on page load
+        window.onload = function() {
+            testBackend();
+        };
+    </script>
+</body>
+</html>
