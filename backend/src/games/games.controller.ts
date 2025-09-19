@@ -64,6 +64,17 @@ export class GamesController {
     return this.gamesService.joinCaroGame(userId, { gameId: joinDto.gameId, opponentId: joinDto.opponentId });
   }
 
+  @Get('caro/available')
+  async getAvailableCaroGames(@Request() req) {
+    return this.gamesService.getAvailableCaroGames();
+  }
+
+  @Get('caro/user/:userId/history')
+  async getCaroGameHistory(@Request() req, @Param('userId') userId: string) {
+    const currentUserId = req.user?.id || req.user?._id;
+    return this.gamesService.getCaroGameHistory(currentUserId, userId);
+  }
+
   @Get('caro/:gameId')
   async getCaroGame(@Request() req, @Param('gameId') gameId: string) {
     const userId = req.user?.id || req.user?._id;
@@ -74,16 +85,5 @@ export class GamesController {
   async makeCaroMove(@Request() req, @Param('gameId') gameId: string, @Body() moveDto: MakeCaroMoveDto) {
     const userId = req.user?.id || req.user?._id;
     return this.gamesService.makeCaroMove(userId, gameId, moveDto);
-  }
-
-  @Get('caro/available')
-  async getAvailableCaroGames(@Request() req) {
-    return this.gamesService.getAvailableCaroGames();
-  }
-
-  @Get('caro/user/:userId/history')
-  async getCaroGameHistory(@Request() req, @Param('userId') userId: string) {
-    const currentUserId = req.user?.id || req.user?._id;
-    return this.gamesService.getCaroGameHistory(currentUserId, userId);
   }
 }

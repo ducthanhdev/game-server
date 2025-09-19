@@ -18,8 +18,10 @@ async function handleLogin(e) {
         if (response.ok) {
             localStorage.setItem('token', data.access_token);
             currentUser = data.user;
+            console.log('✅ Login successful, user:', currentUser);
             showSuccess('Đăng nhập thành công!');
             setTimeout(() => {
+                console.log('🔄 Calling showGameSelection...');
                 showGameSelection();
             }, 1000);
         } else {
@@ -79,8 +81,10 @@ function handleLogout() {
 
 // Check if user is logged in
 async function checkAuthStatus() {
+    console.log('🔍 Checking auth status...');
     const token = localStorage.getItem('token');
     if (token) {
+        console.log('🔑 Token found, checking profile...');
         try {
             const response = await fetch(`${window.API_BASE_URL}/auth/profile`, {
                 headers: { 'Authorization': `Bearer ${token}` }
@@ -89,15 +93,19 @@ async function checkAuthStatus() {
             if (response.ok) {
                 const user = await response.json();
                 currentUser = user;
+                console.log('✅ Profile loaded, user:', user);
                 showGameSelection();
             } else {
+                console.log('❌ Invalid token, response status:', response.status);
                 throw new Error('Invalid token');
             }
         } catch (error) {
+            console.log('❌ Profile check failed:', error);
             localStorage.removeItem('token');
             showAuthScreen();
         }
     } else {
+        console.log('❌ No token found');
         showAuthScreen();
     }
 }

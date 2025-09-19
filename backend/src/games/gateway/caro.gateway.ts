@@ -77,14 +77,17 @@ export class CaroGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
       
       this.waitingQueue.push(userId);
+      console.log(`👤 User ${userId} joined queue. Queue length: ${this.waitingQueue.length}`);
       
       if (this.waitingQueue.length >= 2) {
         const [player1, player2] = this.waitingQueue.splice(0, 2);
+        console.log(`🎮 Creating match between ${player1} and ${player2}`);
         await this.createMatch(player1, player2);
       } else {
         client.emit('queue.waiting', { message: 'Đang tìm đối thủ...' });
       }
     } catch (error) {
+      console.error('Error in queue.join:', error);
       client.emit('queue.error', { message: 'Lỗi khi tham gia hàng đợi' });
     }
   }
@@ -132,17 +135,24 @@ export class CaroGateway implements OnGatewayConnection, OnGatewayDisconnect {
         client.emit('room.error', { message: 'Nước đi không hợp lệ' });
       }
     } catch (error) {
+      console.error('Error in room.makeMove:', error);
       client.emit('room.error', { message: 'Lỗi khi thực hiện nước đi' });
     }
   }
 
+
   private async createMatch(player1Id: string, player2Id: string) {
     try {
+      console.log(`🎮 Creating match between ${player1Id} and ${player2Id}`);
+      
       const game = await this.gamesService.createCaroGame(player1Id);
       await this.gamesService.joinCaroGame(player2Id, { gameId: game._id.toString(), opponentId: player1Id });
       
       const roomId = game._id.toString();
-      this.gameRooms.set(roomId, { player1Id, player2Id });
+      this.gameRooms.set(roomId, { 
+        player1Id, 
+        player2Id
+      });
 
       // Join both players to room
       const player1Socket = this.userSockets.get(player1Id);
@@ -155,6 +165,7 @@ export class CaroGateway implements OnGatewayConnection, OnGatewayDisconnect {
           symbol: 'X',
           opponent: { userId: player2Id, username: 'Opponent' },
         });
+        console.log(`✅ Player 1 (${player1Id}) joined room ${roomId} as X`);
       }
       
       if (player2Socket) {
@@ -164,6 +175,7 @@ export class CaroGateway implements OnGatewayConnection, OnGatewayDisconnect {
           symbol: 'O',
           opponent: { userId: player1Id, username: 'Opponent' },
         });
+        console.log(`✅ Player 2 (${player2Id}) joined room ${roomId} as O`);
       }
 
       // Send initial game state
@@ -171,7 +183,10 @@ export class CaroGateway implements OnGatewayConnection, OnGatewayDisconnect {
         board: game.board,
         currentPlayer: game.currentPlayer,
         isGameOver: game.isGameOver,
+        winner: game.winnerId,
       });
+      
+      console.log(`🎮 Match created successfully: ${roomId}`);
     } catch (error) {
       console.error('Error creating match:', error);
     }

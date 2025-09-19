@@ -409,6 +409,11 @@ body {
     color: white;
 }
 
+.control-btn-danger {
+    background: #dc3545;
+    color: white;
+}
+
 .control-btn-warning {
     background: #ffc107;
     color: #212529;
@@ -416,6 +421,173 @@ body {
 
 .control-btn:hover {
     opacity: 0.8;
+}
+
+.ai-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.ai-difficulty-select {
+    padding: 8px 12px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    background: white;
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.ai-difficulty-select:hover {
+    border-color: #4ecdc4;
+}
+
+.ai-difficulty-select:focus {
+    outline: none;
+    border-color: #4ecdc4;
+    box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.1);
+}
+
+/* Status Display */
+.status-display {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.status-content {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px 30px;
+    border-radius: 15px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-size: 18px;
+    font-weight: 600;
+    text-align: center;
+    animation: pulse 2s infinite;
+}
+
+.status-icon {
+    font-size: 24px;
+    animation: spin 1s linear infinite;
+}
+
+.status-text {
+    white-space: nowrap;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.toast {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    margin-bottom: 15px;
+    min-width: 350px;
+    max-width: 450px;
+    pointer-events: auto;
+    animation: fadeInScale 0.3s ease-out;
+    border: 2px solid #e9ecef;
+}
+
+.toast-header {
+    display: flex;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid #eee;
+    font-weight: 700;
+    font-size: 16px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 12px 12px 0 0;
+}
+
+.toast-icon {
+    margin-right: 8px;
+    font-size: 16px;
+}
+
+.toast-close {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    margin-left: auto;
+    color: #999;
+}
+
+.toast-close:hover {
+    color: #333;
+}
+
+.toast-body {
+    padding: 16px 20px;
+    font-size: 15px;
+    color: #333;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+.toast.success {
+    border-left: 4px solid #28a745;
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+}
+
+.toast.error {
+    border-left: 4px solid #dc3545;
+    background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+}
+
+.toast.warning {
+    border-left: 4px solid #ffc107;
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+}
+
+.toast.info {
+    border-left: 4px solid #17a2b8;
+    background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+}
+
+@keyframes fadeInScale {
+    from {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.toast.fade-out {
+    animation: fadeOut 0.3s ease-out forwards;
+}
+
+@keyframes fadeOut {
+    from {
+        transform: scale(1);
+        opacity: 1;
+    }
+    to {
+        transform: scale(0.8);
+        opacity: 0;
+    }
 }
 
 canvas {

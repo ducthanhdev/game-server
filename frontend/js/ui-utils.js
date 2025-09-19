@@ -7,21 +7,43 @@ function showAuthScreen() {
 }
 
 function showGameSelection() {
-    document.getElementById('authScreen').style.display = 'none';
-    document.getElementById('gameSelectionScreen').style.display = 'block';
-    document.getElementById('line98Game').style.display = 'none';
-    document.getElementById('caroGame').style.display = 'none';
+    console.log('🎮 showGameSelection called');
+    
+    const authScreen = document.getElementById('authScreen');
+    const gameSelectionScreen = document.getElementById('gameSelectionScreen');
+    const line98Game = document.getElementById('line98Game');
+    const caroGame = document.getElementById('caroGame');
+    
+    console.log('📱 Elements found:', {
+        authScreen: !!authScreen,
+        gameSelectionScreen: !!gameSelectionScreen,
+        line98Game: !!line98Game,
+        caroGame: !!caroGame
+    });
+    
+    if (authScreen) authScreen.style.display = 'none';
+    if (gameSelectionScreen) gameSelectionScreen.style.display = 'block';
+    if (line98Game) line98Game.style.display = 'none';
+    if (caroGame) caroGame.style.display = 'none';
     
     // Update user info
     if (window.getCurrentUser) {
         const user = window.getCurrentUser();
+        console.log('👤 Current user:', user);
         if (user) {
-            document.getElementById('userUsername').textContent = user.username || 'N/A';
-            document.getElementById('userEmail').textContent = user.email || 'N/A';
-            document.getElementById('userNickname').textContent = user.nickname || 'N/A';
-            document.getElementById('userInfo').style.display = 'block';
+            const userUsername = document.getElementById('userUsername');
+            const userEmail = document.getElementById('userEmail');
+            const userNickname = document.getElementById('userNickname');
+            const userInfo = document.getElementById('userInfo');
+            
+            if (userUsername) userUsername.textContent = user.username || 'N/A';
+            if (userEmail) userEmail.textContent = user.email || 'N/A';
+            if (userNickname) userNickname.textContent = user.nickname || 'N/A';
+            if (userInfo) userInfo.style.display = 'block';
         }
     }
+    
+    console.log('✅ showGameSelection completed');
 }
 
 function showGame(gameType) {
@@ -74,7 +96,13 @@ function showSuccess(message) {
 
 // Toast notification system
 function showToast(message, type = 'info', duration = 5000) {
+    console.log('🍞 Showing toast:', message, type);
     const toastContainer = document.getElementById('toastContainer');
+    
+    if (!toastContainer) {
+        console.error('❌ Toast container not found!');
+        return;
+    }
     
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
@@ -93,15 +121,17 @@ function showToast(message, type = 'info', duration = 5000) {
             <button class="toast-close" onclick="this.parentElement.parentElement.remove()">×</button>
         </div>
         <div class="toast-body">
-            ${message}
+            ${message}                                                                                                                                                                                                                                                                                                                                                                                       
         </div>
     `;
     
     toastContainer.appendChild(toast);
+    console.log('🍞 Toast added to container:', toast);
     
     // Auto remove after duration
     setTimeout(() => {
         if (toast.parentElement) {
+            console.log('🍞 Auto removing toast after', duration, 'ms');
             toast.classList.add('fade-out');
             setTimeout(() => {
                 if (toast.parentElement) {
