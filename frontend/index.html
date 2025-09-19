@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server Game - Line 98 & Cờ Caro</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Login/Register Screen -->
+    <div id="authScreen" class="container">
+        <div class="header">
+            <div class="logo">🎮 Game Server</div>
+            <div class="subtitle">Line 98 & Cờ Caro X O</div>
+        </div>
+
+        <div id="errorMessage" class="error"></div>
+        <div id="successMessage" class="success"></div>
+        
+        <!-- Toast Container -->
+        <div id="toastContainer" class="toast-container"></div>
+
+        <!-- Login Form -->
+        <div id="loginForm">
+            <h2 style="text-align: center; margin-bottom: 20px; color: #333;">Đăng nhập</h2>
+            <form id="loginFormElement">
+                <div class="form-group">
+                    <label for="loginUsername">Tên đăng nhập:</label>
+                    <input type="text" id="loginUsername" autocomplete="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Mật khẩu:</label>
+                    <input type="password" id="loginPassword" autocomplete="current-password" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Đăng nhập</button>
+            </form>
+            <button id="showRegister" class="btn btn-secondary">Chưa có tài khoản? Đăng ký ngay</button>
+        </div>
+
+        <!-- Register Form -->
+        <div id="registerForm" style="display: none;">
+            <h2 style="text-align: center; margin-bottom: 20px; color: #333;">Đăng ký</h2>
+            <form id="registerFormElement">
+                <div class="form-group">
+                    <label for="registerUsername">Tên đăng nhập:</label>
+                    <input type="text" id="registerUsername" autocomplete="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="registerPassword">Mật khẩu:</label>
+                    <input type="password" id="registerPassword" autocomplete="new-password" required>
+                </div>
+                <div class="form-group">
+                    <label for="registerEmail">Email (tùy chọn):</label>
+                    <input type="email" id="registerEmail">
+                </div>
+                <div class="form-group">
+                    <label for="registerNickname">Nickname (tùy chọn):</label>
+                    <input type="text" id="registerNickname">
+                </div>
+                <button type="submit" class="btn btn-primary">Đăng ký</button>
+            </form>
+            <button id="showLogin" class="btn btn-secondary">Đã có tài khoản? Đăng nhập</button>
+        </div>
+    </div>
+
+    <!-- Game Selection Screen -->
+    <div id="gameSelectionScreen" class="game-container" style="display: none;">
+        <div class="header">
+            <div class="logo">🎮 Chọn Game</div>
+            <div class="subtitle">Chọn trò chơi bạn muốn chơi</div>
+        </div>
+
+        <div class="user-info" id="userInfo">
+            <h3>Thông tin người dùng</h3>
+            <p><strong>Tên đăng nhập:</strong> <span id="userUsername"></span></p>
+            <p><strong>Email:</strong> <span id="userEmail"></span></p>
+            <p><strong>Nickname:</strong> <span id="userNickname"></span></p>
+            <button id="logoutBtn" class="logout-btn">Đăng xuất</button>
+        </div>
+
+        <div class="game-grid">
+            <div class="game-card" id="line98Card">
+                <div class="game-icon">🎯</div>
+                <div class="game-title">Line 98</div>
+                <div class="game-description">
+                    Trò chơi solo với bóng màu<br>
+                    Tạo hàng 5 bóng cùng màu để ghi điểm
+                </div>
+            </div>
+
+            <div class="game-card" id="caroCard">
+                <div class="game-icon">⚔️</div>
+                <div class="game-title">Cờ Caro X O</div>
+                <div class="game-description">
+                    Trò chơi 2 người online<br>
+                    Tạo hàng 5 ký hiệu để thắng
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Line 98 Game -->
+    <div id="line98Game" class="game-container game-area">
+        <button id="backToSelection" class="back-btn">← Quay lại chọn game</button>
+        
+        <div class="game-header">
+            <div class="game-title-header">🎯 Line 98</div>
+            <div class="game-controls">
+                <button id="newGameBtn" class="control-btn control-btn-primary">Game mới</button>
+                <button id="hintBtn" class="control-btn control-btn-success">Gợi ý</button>
+            </div>
+        </div>
+
+        <div class="game-info">
+            <div class="score">Điểm: <span id="score">0</span></div>
+            <div class="status" id="gameStatus">Chọn bóng để bắt đầu</div>
+        </div>
+
+        <canvas id="line98Canvas" width="550" height="450"></canvas>
+    </div>
+
+    <!-- Caro Game -->
+    <div id="caroGame" class="game-container game-area">
+        <button id="backToSelectionCaro" class="back-btn">← Quay lại chọn game</button>
+        
+        <div class="game-header">
+            <div class="game-title-header">⚔️ Cờ Caro X O</div>
+            <div class="game-controls">
+                <button id="newCaroGameBtn" class="control-btn control-btn-warning">Game mới</button>
+                <button id="playWithAIBtn" class="control-btn control-btn-info">Chơi với máy</button>
+                <button id="playOnlineBtn" class="control-btn control-btn-primary">Chơi online</button>
+            </div>
+        </div>
+
+        <div class="game-info">
+            <div class="status" id="caroStatus">Chọn chế độ chơi để bắt đầu</div>
+        </div>
+
+        <canvas id="caroCanvas" width="600" height="600"></canvas>
+    </div>
+
+    <!-- Load modules in order -->
+    <script src="js/config.js"></script>
+    <script src="js/ui-utils.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/line98-game.js"></script>
+    <script src="js/caro-game.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

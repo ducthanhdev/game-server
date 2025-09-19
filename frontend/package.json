@@ -1,0 +1,18 @@
+{
+  "name": "server-game-frontend",
+  "version": "1.0.0",
+  "description": "Frontend for Server Game - Line 98 & Caro",
+  "main": "index.html",
+  "scripts": {
+    "start": "python -m http.server 8080",
+    "start:node": "npx http-server -p 8080 -c-1",
+    "build": "echo 'No build process needed for vanilla HTML/CSS/JS'",
+    "dev": "python -m http.server 8080"
+  },
+  "keywords": ["html", "css", "javascript", "game", "frontend"],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}
