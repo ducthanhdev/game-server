@@ -189,26 +189,6 @@ function showConfirmDialog(title, message, onConfirm, onCancel = null) {
     }
 }
 
-// Loading indicator
-function showLoading(element, show = true) {
-    if (show) {
-        element.innerHTML = '<div class="loading"><div></div><div></div><div></div></div>';
-    } else {
-        element.innerHTML = '';
-    }
-}
-
-// Waiting indicator
-function showWaiting(element, message = 'Đang chờ...') {
-    element.innerHTML = `
-        <span>${message}</span>
-        <div class="waiting-dots">
-            <span></span>
-            <span></span>
-            <span></span>
-        </div>
-    `;
-}
 
 // Export functions
 window.showAuthScreen = showAuthScreen;
@@ -217,6 +197,3 @@ window.showGame = showGame;
 window.showError = showError;
 window.showSuccess = showSuccess;
 window.showToast = showToast;
-window.showConfirmDialog = showConfirmDialog;
-window.showLoading = showLoading;
-window.showWaiting = showWaiting;

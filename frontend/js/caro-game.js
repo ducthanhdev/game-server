@@ -397,24 +397,6 @@ async function initOnlineCaroGame() {
     }
 }
 
-// Create new caro game (deprecated - now handled by WebSocket)
-async function createCaroGame() {
-    // This function is now handled by WebSocket queue system
-    console.log('🆕 createCaroGame called but handled by WebSocket');
-}
-
-// Join existing caro game (deprecated - now handled by WebSocket)
-async function joinCaroGame(gameId) {
-    // This function is now handled by WebSocket queue system
-    console.log('🎮 joinCaroGame called but handled by WebSocket');
-}
-
-// Get available caro games (deprecated - now handled by WebSocket)
-async function getAvailableCaroGames() {
-    // This function is now handled by WebSocket queue system
-    console.log('🌐 getAvailableCaroGames called but handled by WebSocket');
-    return [];
-}
 
 // Make a move
 async function makeCaroMove(x, y) {

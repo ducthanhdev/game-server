@@ -64,10 +64,6 @@ export class GamesController {
     return this.gamesService.joinCaroGame(userId, { gameId: joinDto.gameId, opponentId: joinDto.opponentId });
   }
 
-  @Get('caro/available')
-  async getAvailableCaroGames(@Request() req) {
-    return this.gamesService.getAvailableCaroGames();
-  }
 
   @Get('caro/user/:userId/history')
   async getCaroGameHistory(@Request() req, @Param('userId') userId: string) {

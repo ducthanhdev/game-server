@@ -191,12 +191,6 @@ export class GamesService {
     return game.save();
   }
 
-  async getAvailableCaroGames() {
-    return this.caroModel.find({
-      player2Id: null,
-      isGameOver: false,
-    }).sort({ createdAt: -1 });
-  }
 
   async getCaroGameHistory(userId: string, targetUserId: string) {
     if (userId !== targetUserId) {

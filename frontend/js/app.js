@@ -89,17 +89,5 @@ function setupEventListeners() {
 }
 
 // Game functions
-function updateGameDisplay() {
-    if (gameState) {
-        if (gameState.score !== undefined) {
-            const scoreElement = document.getElementById('score');
-            if (scoreElement) {
-                scoreElement.textContent = gameState.score;
-            }
-        }
-    }
-}
-
 // Export functions
 window.initializeApp = initializeApp;
-window.updateGameDisplay = updateGameDisplay;
