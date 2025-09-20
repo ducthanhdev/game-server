@@ -1,4 +1,3 @@
-// Main application file - Frontend thuần
 let currentGame = null;
 let gameState = null;
 
@@ -14,20 +13,16 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function initializeApp() {
-    // Check authentication status
     if (window.checkAuthStatus) {
         window.checkAuthStatus();
     } else if (window.showAuthScreen) {
         window.showAuthScreen();
-    } else {
-        console.error('showAuthScreen function not found');
     }
     
     setupEventListeners();
 }
 
 function setupEventListeners() {
-    // Auth form toggles
     const showRegisterBtn = document.getElementById('showRegister');
     const showLoginBtn = document.getElementById('showLogin');
     
@@ -45,7 +40,6 @@ function setupEventListeners() {
         });
     }
 
-    // Auth forms
     const loginForm = document.getElementById('loginFormElement');
     const registerForm = document.getElementById('registerFormElement');
     
@@ -57,13 +51,11 @@ function setupEventListeners() {
         registerForm.addEventListener('submit', handleRegister);
     }
 
-    // Logout
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', handleLogout);
     }
 
-    // Game selection
     const line98Card = document.getElementById('line98Card');
     const caroCard = document.getElementById('caroCard');
     
@@ -75,7 +67,6 @@ function setupEventListeners() {
         caroCard.addEventListener('click', () => showGame('caro'));
     }
 
-    // Back buttons
     const backToSelection = document.getElementById('backToSelection');
     const backToSelectionCaro = document.getElementById('backToSelectionCaro');
     
@@ -88,6 +79,4 @@ function setupEventListeners() {
     }
 }
 
-// Game functions
-// Export functions
 window.initializeApp = initializeApp;

@@ -1,4 +1,3 @@
-// UI Utilities - Frontend thuần
 function showAuthScreen() {
     document.getElementById('authScreen').style.display = 'block';
     document.getElementById('gameSelectionScreen').style.display = 'none';
@@ -7,29 +6,18 @@ function showAuthScreen() {
 }
 
 function showGameSelection() {
-    console.log('🎮 showGameSelection called');
-    
     const authScreen = document.getElementById('authScreen');
     const gameSelectionScreen = document.getElementById('gameSelectionScreen');
     const line98Game = document.getElementById('line98Game');
     const caroGame = document.getElementById('caroGame');
-    
-    console.log('📱 Elements found:', {
-        authScreen: !!authScreen,
-        gameSelectionScreen: !!gameSelectionScreen,
-        line98Game: !!line98Game,
-        caroGame: !!caroGame
-    });
     
     if (authScreen) authScreen.style.display = 'none';
     if (gameSelectionScreen) gameSelectionScreen.style.display = 'block';
     if (line98Game) line98Game.style.display = 'none';
     if (caroGame) caroGame.style.display = 'none';
     
-    // Update user info
     if (window.getCurrentUser) {
         const user = window.getCurrentUser();
-        console.log('👤 Current user:', user);
         if (user) {
             const userUsername = document.getElementById('userUsername');
             const userEmail = document.getElementById('userEmail');
@@ -42,8 +30,6 @@ function showGameSelection() {
             if (userInfo) userInfo.style.display = 'block';
         }
     }
-    
-    console.log('✅ showGameSelection completed');
 }
 
 function showGame(gameType) {
@@ -52,14 +38,12 @@ function showGame(gameType) {
     if (gameType === 'line98') {
         document.getElementById('line98Game').style.display = 'block';
         document.getElementById('caroGame').style.display = 'none';
-        // Initialize Line 98 game
         if (typeof initLine98Game === 'function') {
             initLine98Game();
         }
     } else if (gameType === 'caro') {
         document.getElementById('line98Game').style.display = 'none';
         document.getElementById('caroGame').style.display = 'block';
-        // Initialize Caro game
         if (typeof initCaroGame === 'function') {
             initCaroGame('local');
         }
@@ -94,13 +78,10 @@ function showSuccess(message) {
     }, 3000);
 }
 
-// Toast notification system
 function showToast(message, type = 'info', duration = 5000) {
-    console.log('🍞 Showing toast:', message, type);
     const toastContainer = document.getElementById('toastContainer');
     
     if (!toastContainer) {
-        console.error('❌ Toast container not found!');
         return;
     }
     
@@ -121,17 +102,14 @@ function showToast(message, type = 'info', duration = 5000) {
             <button class="toast-close" onclick="this.parentElement.parentElement.remove()">×</button>
         </div>
         <div class="toast-body">
-            ${message}                                                                                                                                                                                                                                                                                                                                                                                       
+            ${message}
         </div>
     `;
     
     toastContainer.appendChild(toast);
-    console.log('🍞 Toast added to container:', toast);
     
-    // Auto remove after duration
     setTimeout(() => {
         if (toast.parentElement) {
-            console.log('🍞 Auto removing toast after', duration, 'ms');
             toast.classList.add('fade-out');
             setTimeout(() => {
                 if (toast.parentElement) {

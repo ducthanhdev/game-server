@@ -1,10 +1,4 @@
-import { IsString, IsNumber, IsOptional, IsBoolean, Min, Max } from 'class-validator';
-
-export class CreateLine98GameDto {
-  @IsOptional()
-  @IsString()
-  difficulty?: string;
-}
+import { IsString, IsNumber, IsOptional, Min, Max } from 'class-validator';
 
 export class MakeLine98MoveDto {
   @IsNumber()
@@ -26,12 +20,6 @@ export class MakeLine98MoveDto {
   @Min(0)
   @Max(8)
   toCol: number;
-}
-
-export class CreateCaroGameDto {
-  @IsOptional()
-  @IsString()
-  roomName?: string;
 }
 
 export class JoinCaroGameDto {

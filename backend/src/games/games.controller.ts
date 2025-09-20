@@ -1,7 +1,7 @@
 import { Controller, Post, Get, Put, Delete, Body, UseGuards, Request, Param, BadRequestException } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { GamesService } from './games.service';
-import { CreateLine98GameDto, MakeLine98MoveDto, CreateCaroGameDto, MakeCaroMoveDto, JoinCaroGameDto } from './dto/games.dto';
+import { MakeLine98MoveDto, MakeCaroMoveDto, JoinCaroGameDto } from './dto/games.dto';
 
 @Controller('games')
 @UseGuards(JwtAuthGuard)
@@ -49,8 +49,6 @@ export class GamesController {
     return this.gamesService.getLine98Hint(userId, gameId);
   }
 
-
-
   // Caro Game APIs
   @Post('caro/create')
   async createCaroGame(@Request() req) {
@@ -63,7 +61,6 @@ export class GamesController {
     const userId = req.user?.id || req.user?._id;
     return this.gamesService.joinCaroGame(userId, { gameId: joinDto.gameId, opponentId: joinDto.opponentId });
   }
-
 
   @Get('caro/user/:userId/history')
   async getCaroGameHistory(@Request() req, @Param('userId') userId: string) {

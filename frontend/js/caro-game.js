@@ -1,9 +1,9 @@
-// Caro Game - Frontend thuần với API calls
+// Caro Game - Frontend
 let caroGameState = null;
 let currentCaroGameId = null;
 let isOnlineMode = false;
 let isAIMode = false;
-let aiDifficulty = 'medium'; // easy, medium, hard
+let aiDifficulty = 'medium';
 let caroSocket = null;
 let currentPlayerSymbol = null;
 
@@ -16,17 +16,14 @@ let caroAnimations = {
 
 let caroAnimationId = null;
 
-// Get current user ID from token
 function getCurrentUserId() {
     try {
         const token = localStorage.getItem('token');
         if (!token) return null;
         
-        // Decode JWT token to get user ID
         const payload = JSON.parse(atob(token.split('.')[1]));
         return payload.sub || payload.id;
     } catch (error) {
-        console.error('Error getting current user ID:', error);
         return null;
     }
 }
@@ -208,19 +205,17 @@ function connectCaroWebSocket() {
     });
     
     caroSocket.on('connect', () => {
-        console.log('🔌 Connected to Caro WebSocket');
+        // Connected to WebSocket
     });
     
     caroSocket.on('disconnect', () => {
-        console.log('🔌 Disconnected from Caro WebSocket');
+        // Disconnected from WebSocket
     });
     
     caroSocket.on('queue.matched', (data) => {
-        console.log('🎮 Match found:', data);
         currentCaroGameId = data.roomId;
         currentPlayerSymbol = data.symbol;
         
-        // Initialize game state
         caroGameState = {
             board: Array(15).fill(null).map(() => Array(15).fill(0)),
             currentPlayer: 1,
@@ -231,7 +226,6 @@ function connectCaroWebSocket() {
             gameId: data.roomId
         };
         
-        // Show leave room button for online mode
         const leaveRoomBtn = document.getElementById('leaveRoomBtn');
         if (leaveRoomBtn) {
             leaveRoomBtn.style.display = 'inline-block';
@@ -244,84 +238,45 @@ function connectCaroWebSocket() {
     });
     
     caroSocket.on('queue.waiting', (data) => {
-        console.log('⏳ Waiting for opponent:', data);
         showStatusDisplay('Đang tìm đối thủ...', '⏳');
     });
     
     caroSocket.on('queue.error', (data) => {
-        console.error('❌ Queue error:', data);
         showStatusDisplay(data.message, '❌');
         setTimeout(() => hideStatusDisplay(), 3000);
     });
     
     caroSocket.on('room.update', (data) => {
-        console.log('🔄 Game update received:', data);
         if (caroGameState) {
-            console.log('🔄 [FRONTEND] Before update:', {
-                currentPlayer: caroGameState.currentPlayer,
-                isGameOver: caroGameState.isGameOver,
-                winner: caroGameState.winner
-            });
-            
-            // Track turn change
             const oldCurrentPlayer = caroGameState.currentPlayer;
             caroGameState.board = data.board;
             caroGameState.currentPlayer = data.currentPlayer;
             caroGameState.isGameOver = data.isGameOver;
             caroGameState.winner = data.winner;
             
-            // If turn changed, record the timestamp and clear any pending moves
             if (oldCurrentPlayer !== data.currentPlayer) {
                 caroGameState.lastTurnChange = Date.now();
-                console.log('🔄 [FRONTEND] Turn changed from', oldCurrentPlayer, 'to', data.currentPlayer);
                 
-                // Clear any pending move attempts
                 if (caroGameState.pendingMove) {
-                    console.log('🚫 [FRONTEND] Clearing pending move due to turn change');
                     caroGameState.pendingMove = null;
                 }
                 
-                // Reset move cooldown to prevent immediate moves
-                caroGameState.moveCooldown = Date.now() + 1000; // 1 second cooldown
+                caroGameState.moveCooldown = Date.now() + 1000;
             }
             
-            console.log('🔄 [FRONTEND] After update:', {
-                currentPlayer: caroGameState.currentPlayer,
-                isGameOver: caroGameState.isGameOver,
-                winner: caroGameState.winner,
-                lastTurnChange: caroGameState.lastTurnChange
-            });
-            
-            // Check if this is a new game (board is empty and isGameOver is false)
             const isNewGame = data.board.every(row => row.every(cell => cell === 0)) && !data.isGameOver;
             if (isNewGame && data.gameId) {
-                console.log('🆕 New game detected, updating gameId from', currentCaroGameId, 'to', data.gameId);
-                // Update currentCaroGameId to the new game ID
                 currentCaroGameId = data.gameId;
                 caroGameState.gameId = currentCaroGameId;
                 
-                // Reset game state for new game
                 caroGameState.isGameOver = false;
                 caroGameState.winner = null;
-                
-                // Reset cooldown and pending move for new game
                 caroGameState.moveCooldown = null;
                 caroGameState.pendingMove = null;
                 caroGameState.lastTurnChange = null;
-                
-                console.log('🔄 Game state reset for new game:', {
-                    currentPlayer: caroGameState.currentPlayer,
-                    isGameOver: caroGameState.isGameOver,
-                    winner: caroGameState.winner,
-                    moveCooldown: caroGameState.moveCooldown,
-                    pendingMove: caroGameState.pendingMove,
-                    lastTurnChange: caroGameState.lastTurnChange
-                });
             }
             
-            // Always update gameId if provided (for consistency)
             if (data.gameId && data.gameId !== currentCaroGameId) {
-                console.log('🔄 Updating gameId from', currentCaroGameId, 'to', data.gameId);
                 currentCaroGameId = data.gameId;
                 caroGameState.gameId = currentCaroGameId;
             }
@@ -333,11 +288,9 @@ function connectCaroWebSocket() {
                 stopWaitingForOpponent();
                 hideStatusDisplay();
             } else {
-                // New game started, hide any status display
                 hideStatusDisplay();
             }
         } else {
-            // Initialize game state if not exists (for new game)
             caroGameState = {
                 board: data.board,
                 currentPlayer: data.currentPlayer,
@@ -355,7 +308,6 @@ function connectCaroWebSocket() {
     });
     
     caroSocket.on('room.end', (data) => {
-        console.log('🏁 Game ended:', data);
         if (caroGameState) {
             caroGameState.isGameOver = true;
             caroGameState.winner = data.winner;
@@ -367,34 +319,14 @@ function connectCaroWebSocket() {
     });
     
     caroSocket.on('room.error', (data) => {
-        console.error('❌ Room error:', data);
-        console.error('❌ [FRONTEND] Room error details:', {
-            message: data.message,
-            error: data.error,
-            statusCode: data.statusCode,
-            gameState: {
-                currentPlayer: caroGameState?.currentPlayer,
-                isGameOver: caroGameState?.isGameOver,
-                winner: caroGameState?.winner,
-                moveCooldown: caroGameState?.moveCooldown,
-                pendingMove: caroGameState?.pendingMove,
-                lastTurnChange: caroGameState?.lastTurnChange
-            },
-            gameId: currentCaroGameId,
-            currentPlayerSymbol: currentPlayerSymbol,
-            isOnlineMode: isOnlineMode
-        });
         showStatusDisplay(data.message, '❌');
         setTimeout(() => hideStatusDisplay(), 3000);
     });
     
-    
     caroSocket.on('room.playerLeft', (data) => {
-        console.log('🚪 Player left room:', data);
         showStatusDisplay(data.message, 'ℹ️');
         setTimeout(() => {
             hideStatusDisplay();
-            // Return to game selection
             resetCaroGame();
         }, 3000);
     });
@@ -441,23 +373,18 @@ function resetCaroGame() {
     }
 }
 
-// Game initialization
 async function initCaroGame(mode = 'local', difficulty = 'medium') {
-    console.log('🎮 Initializing caro game with mode:', mode, 'difficulty:', difficulty);
     isOnlineMode = (mode === 'online');
     isAIMode = (mode === 'ai');
     aiDifficulty = difficulty;
     
     if (isOnlineMode) {
-        console.log('🌐 Starting online game...');
         connectCaroWebSocket();
         await initOnlineCaroGame();
     } else if (isAIMode) {
-        console.log('🤖 Starting AI game...');
         disconnectCaroWebSocket();
         initAICaroGame();
     } else {
-        console.log('🏠 Starting local game...');
         disconnectCaroWebSocket();
         initLocalCaroGame();
     }
@@ -499,22 +426,17 @@ function initAICaroGame() {
     updateCaroDisplay();
 }
 
-// Initialize online game
 async function initOnlineCaroGame() {
     try {
-        console.log('🔍 Starting online game...');
         showStatusDisplay('Đang tìm đối thủ...', '🔍');
         
-        // Join WebSocket queue for matchmaking
         if (caroSocket) {
             caroSocket.emit('queue.join');
         } else {
-            console.error('❌ WebSocket not connected');
             showStatusDisplay('Lỗi kết nối WebSocket', '❌');
             setTimeout(() => hideStatusDisplay(), 3000);
         }
     } catch (error) {
-        console.error('❌ Error in initOnlineCaroGame:', error);
         showStatusDisplay('Lỗi khi tìm đối thủ: ' + error.message, '❌');
         setTimeout(() => hideStatusDisplay(), 3000);
     }
@@ -643,82 +565,39 @@ function makeAIMove(x, y) {
     updateCaroDisplay();
 }
 
-// Make online move
 async function makeOnlineCaroMove(x, y) {
     if (!currentCaroGameId || !caroSocket) {
-      console.error('❌ Missing gameId or socket:', { currentCaroGameId, caroSocket: !!caroSocket });
       return;
     }
 
-    // Check if game is over
     if (caroGameState && caroGameState.isGameOver) {
-        console.log('❌ Cannot make move - game is over:', {
-            isGameOver: caroGameState.isGameOver,
-            winner: caroGameState.winner,
-            currentPlayer: caroGameState.currentPlayer
-        });
         return;
     }
 
-    // Check if we're in move cooldown
     if (caroGameState && caroGameState.moveCooldown && Date.now() < caroGameState.moveCooldown) {
-        console.log('⏳ Move cooldown active, waiting:', {
-            moveCooldown: caroGameState.moveCooldown,
-            timeUntilReady: caroGameState.moveCooldown - Date.now(),
-            currentPlayer: caroGameState.currentPlayer
-        });
         return;
     }
     
-    // Check if there's already a pending move
     if (caroGameState && caroGameState.pendingMove) {
-        console.log('⏳ Move already pending, skipping:', caroGameState.pendingMove);
         return;
     }
     
-    // Mark this move as pending
     if (caroGameState) {
         caroGameState.pendingMove = { x, y, timestamp: Date.now() };
     }
 
     try {
-        console.log('🎮 [FRONTEND] Sending move:', { 
-            roomId: currentCaroGameId, 
-            x, 
-            y,
-            currentPlayer: caroGameState.currentPlayer,
-            currentPlayerSymbol,
-            isGameOver: caroGameState.isGameOver,
-            gameState: {
-                currentPlayer: caroGameState.currentPlayer,
-                isGameOver: caroGameState.isGameOver,
-                winner: caroGameState.winner
-            },
-            gameId: {
-                currentCaroGameId: currentCaroGameId,
-                caroGameStateGameId: caroGameState.gameId
-            }
-        });
-        
-        // Send move via WebSocket for real-time sync
         caroSocket.emit('room.makeMove', {
             roomId: currentCaroGameId,
             x: x,
             y: y
         });
         
-        // Clear pending move and cooldown after sending
         if (caroGameState) {
             caroGameState.pendingMove = null;
             caroGameState.moveCooldown = null;
         }
-        
-        // The board will be updated via WebSocket 'room.update' event
-        // No need to manually update here
     } catch (error) {
-        console.error('❌ Error making move:', error);
-        
-        // Clear pending move and cooldown on error
         if (caroGameState) {
             caroGameState.pendingMove = null;
             caroGameState.moveCooldown = null;
@@ -1172,19 +1051,9 @@ function updateCaroDisplay() {
                     statusElement.textContent = caroGameState.winner === 1 ? 
                         'Bạn thắng! 🎉' : 'AI thắng! 🤖';
                 } else if (isOnlineMode && currentPlayerSymbol) {
-                    // Online mode: winner is user ID, need to check if it's current user
                     const isCurrentUserWinner = caroGameState.winner === getCurrentUserId();
                     const winnerSymbol = isCurrentUserWinner ? currentPlayerSymbol : (currentPlayerSymbol === 'X' ? 'O' : 'X');
                     const winnerText = isCurrentUserWinner ? `Bạn (${winnerSymbol}) thắng! 🎉` : `Đối thủ (${winnerSymbol}) thắng! 😭`;
-                    
-                    console.log('🏆 [FRONTEND] Game Over - Winner Check:', {
-                        backendWinnerId: caroGameState.winner,
-                        currentUserId: getCurrentUserId(),
-                        isCurrentUserWinner,
-                        currentPlayerSymbol,
-                        winnerSymbol,
-                        winnerText
-                    });
                     
                     statusElement.textContent = winnerText;
                 } else {
@@ -1238,39 +1107,18 @@ function handleCaroCanvasHover(event) {
     }
 }
 
-// Canvas click handler
 function handleCaroCanvasClick(event) {
     if (!caroGameState || caroGameState.isGameOver) return;
 
-    // Check if it's player's turn in online mode
     if (isOnlineMode && currentPlayerSymbol) {
       const expectedPlayer = currentPlayerSymbol === 'X' ? 1 : 2;
       const isMyTurn = caroGameState.currentPlayer === expectedPlayer;
       
-      console.log('🎯 Turn check:', {
-        currentPlayerSymbol,
-        expectedPlayer,
-        currentPlayer: caroGameState.currentPlayer,
-        isMyTurn,
-        isGameOver: caroGameState.isGameOver,
-        gameId: currentCaroGameId,
-        lastTurnChange: caroGameState.lastTurnChange,
-        timeSinceChange: caroGameState.lastTurnChange ? Date.now() - caroGameState.lastTurnChange : 'N/A'
-      });
-      
       if (!isMyTurn) {
-        console.log('❌ Not your turn, skipping move');
         return;
       }
       
-      // Additional check: if we're in move cooldown, wait
       if (caroGameState.moveCooldown && Date.now() < caroGameState.moveCooldown) {
-        console.log('⏳ Move cooldown active, waiting:', {
-          moveCooldown: caroGameState.moveCooldown,
-          timeUntilReady: caroGameState.moveCooldown - Date.now(),
-          currentPlayer: caroGameState.currentPlayer,
-          expectedPlayer
-        });
         return;
       }
     }
@@ -1322,7 +1170,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const playOnlineBtn = document.getElementById('playOnlineBtn');
     if (playOnlineBtn) {
         playOnlineBtn.addEventListener('click', () => {
-            console.log('🎮 Play online button clicked');
             initCaroGame('online');
         });
     }

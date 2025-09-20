@@ -242,7 +242,6 @@ async function initLine98Game(forceNew = false) {
             }
         } else {
             const error = await response.json();
-            console.error('Line98 Game creation failed:', error);
             showError('Không thể tạo game mới');
         }
     } catch (error) {
@@ -355,7 +354,6 @@ async function makeLine98Move(fromRow, fromCol, toRow, toCol) {
                     showError(error.message || 'Nước đi không hợp lệ');
                 }
             } catch (parseError) {
-                console.error('Error parsing JSON response:', parseError);
                 startInvalidMoveAnimation(fromRow, fromCol, toRow, toCol);
                 showError('🚫 Nước đi không hợp lệ!');
             }
@@ -620,7 +618,7 @@ function renderLine98Board() {
         ctx.stroke();
     }
     } catch (error) {
-        console.error('Error in renderLine98Board:', error);
+        // Handle rendering error silently
     }
 }
 

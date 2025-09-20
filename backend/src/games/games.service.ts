@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Line98Game, Line98GameDocument } from '../database/schemas/line98-game.schema';
 import { CaroGame, CaroGameDocument } from '../database/schemas/caro-game.schema';
-import { CreateLine98GameDto, MakeLine98MoveDto, CreateCaroGameDto, MakeCaroMoveDto, JoinCaroGameDto } from './dto/games.dto';
+import { MakeLine98MoveDto, MakeCaroMoveDto, JoinCaroGameDto } from './dto/games.dto';
 
 @Injectable()
 export class GamesService {
@@ -153,18 +153,6 @@ export class GamesService {
 
     const expectedPlayer = game.currentPlayer === 1 ? game.player1Id : game.player2Id;
     
-    console.log('🔍 [BACKEND] Turn validation:', {
-      gameId: game._id.toString(),
-      currentPlayer: game.currentPlayer,
-      expectedPlayerId: expectedPlayer.toString(),
-      userId: userId,
-      player1Id: game.player1Id.toString(),
-      player2Id: game.player2Id.toString(),
-      isPlayer1Turn: game.currentPlayer === 1,
-      isPlayer2Turn: game.currentPlayer === 2,
-      isExpectedPlayer: expectedPlayer.toString() === userId
-    });
-    
     if (expectedPlayer.toString() !== userId) {
       throw new BadRequestException('It is not your turn');
     }
@@ -174,10 +162,8 @@ export class GamesService {
       throw new BadRequestException('Position is already occupied');
     }
 
-    // Make the move
     game.board[x][y] = game.currentPlayer;
     
-    // Check for win
     const winner = this.checkCaroWinner(game.board, x, y);
     if (winner !== 0) {
       game.isGameOver = true;
@@ -234,32 +220,22 @@ export class GamesService {
   private spawnRandomBalls(board: number[][], count: number): number {
     const emptyCells = this.getEmptyCells(board);
     if (emptyCells.length === 0) {
-      console.log('No empty cells available for spawning');
       return 0;
     }
     
-    console.log(`Attempting to spawn ${count} balls in ${emptyCells.length} empty cells`);
-    
     let placed = 0;
-    const availableCells = [...emptyCells]; // Copy the array
+    const availableCells = [...emptyCells];
     
     for (let i = 0; i < count && availableCells.length > 0; i++) {
-      // Pick a random cell from available cells
       const randomIndex = Math.floor(Math.random() * availableCells.length);
       const [row, col] = availableCells[randomIndex];
       
-      // Triple check the cell is still empty
       if (board[row][col] === 0) {
         const color = Math.floor(Math.random() * this.COLORS) + 1;
         board[row][col] = color;
         placed++;
-        console.log(`Placed ball color ${color} at (${row},${col})`);
-        
-        // Remove this cell from available cells to prevent duplicates
         availableCells.splice(randomIndex, 1);
       } else {
-        console.log(`Cell (${row},${col}) is not empty, skipping...`);
-        // Remove this cell from available cells since it's not empty
         availableCells.splice(randomIndex, 1);
       }
     }
@@ -1039,63 +1015,30 @@ export class GamesService {
     const player = board[row][col];
     const WIN_LENGTH = 5;
     
-    console.log(`🔍 [BACKEND] Checking winner for player ${player} at (${row}, ${col})`);
-    
-    // Debug: Print board around the move
-    console.log('📋 [BACKEND] Board state around move:');
-    for (let i = Math.max(0, row-2); i <= Math.min(14, row+2); i++) {
-      let rowStr = '';
-      for (let j = Math.max(0, col-2); j <= Math.min(14, col+2); j++) {
-        if (i === row && j === col) {
-          rowStr += `[${board[i][j]}]`;
-        } else {
-          rowStr += ` ${board[i][j]} `;
-        }
-      }
-      console.log(`Row ${i}: ${rowStr}`);
-    }
-    
     // Check horizontal
     let count = 1;
     for (let i = col - 1; i >= 0 && board[row][i] === player; i--) count++;
     for (let i = col + 1; i < 15 && board[row][i] === player; i++) count++;
-    console.log(`📏 [BACKEND] Horizontal count: ${count}`);
-    if (count >= WIN_LENGTH) {
-      console.log(`🎉 [BACKEND] Player ${player} wins horizontally!`);
-      return player;
-    }
+    if (count >= WIN_LENGTH) return player;
 
     // Check vertical
     count = 1;
     for (let i = row - 1; i >= 0 && board[i][col] === player; i--) count++;
     for (let i = row + 1; i < 15 && board[i][col] === player; i++) count++;
-    console.log(`📏 [BACKEND] Vertical count: ${count}`);
-    if (count >= WIN_LENGTH) {
-      console.log(`🎉 [BACKEND] Player ${player} wins vertically!`);
-      return player;
-    }
+    if (count >= WIN_LENGTH) return player;
 
     // Check diagonal (top-left to bottom-right)
     count = 1;
     for (let i = 1; row - i >= 0 && col - i >= 0 && board[row - i][col - i] === player; i++) count++;
     for (let i = 1; row + i < 15 && col + i < 15 && board[row + i][col + i] === player; i++) count++;
-    console.log(`📏 [BACKEND] Diagonal (\) count: ${count}`);
-    if (count >= WIN_LENGTH) {
-      console.log(`🎉 [BACKEND] Player ${player} wins diagonally!`);
-      return player;
-    }
+    if (count >= WIN_LENGTH) return player;
 
     // Check diagonal (top-right to bottom-left)
     count = 1;
     for (let i = 1; row - i >= 0 && col + i < 15 && board[row - i][col + i] === player; i++) count++;
     for (let i = 1; row + i < 15 && col - i >= 0 && board[row + i][col - i] === player; i++) count++;
-    console.log(`📏 [BACKEND] Diagonal (/) count: ${count}`);
-    if (count >= WIN_LENGTH) {
-      console.log(`🎉 [BACKEND] Player ${player} wins diagonally!`);
-      return player;
-    }
+    if (count >= WIN_LENGTH) return player;
 
-    console.log(`❌ [BACKEND] No winner found for player ${player}`);
     return 0;
   }
 

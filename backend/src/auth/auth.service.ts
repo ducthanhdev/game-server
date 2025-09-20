@@ -36,7 +36,6 @@ export class AuthService {
   }
 
   async register(username: string, password: string, email?: string, nickname?: string) {
-    // Check if user already exists
     const existingUser = await this.userModel.findOne({ username }).exec();
     if (existingUser) {
       throw new ConflictException('Username already exists');
@@ -53,7 +52,6 @@ export class AuthService {
     const savedUser = await user.save();
     const { password: _, ...result } = savedUser.toObject();
     
-    // Return login response with JWT token
     return this.login(result);
   }
 }

@@ -24,7 +24,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       return null;
     }
     const { password, ...result } = user.toObject();
-    // Add id field for compatibility
     result.id = result._id.toString();
     return result;
   }

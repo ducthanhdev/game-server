@@ -9,20 +9,12 @@ export class AuthController {
 
   @Post('register')
   async register(@Body() registerDto: RegisterDto) {
-    console.log('Register request:', registerDto);
-    try {
-      const result = await this.authService.register(
-        registerDto.username,
-        registerDto.password,
-        registerDto.email,
-        registerDto.nickname,
-      );
-      console.log('Register success:', result);
-      return result;
-    } catch (error) {
-      console.error('Register error:', error);
-      throw error;
-    }
+    return this.authService.register(
+      registerDto.username,
+      registerDto.password,
+      registerDto.email,
+      registerDto.nickname,
+    );
   }
 
   @Post('login')
