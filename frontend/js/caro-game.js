@@ -7,6 +7,15 @@ let aiDifficulty = 'medium'; // easy, medium, hard
 let caroSocket = null;
 let currentPlayerSymbol = null;
 
+// Animation system
+let caroAnimations = {
+    placing: [],
+    winning: [],
+    pulse: null
+};
+
+let caroAnimationId = null;
+
 // Get current user ID from token
 function getCurrentUserId() {
     try {
@@ -20,6 +29,110 @@ function getCurrentUserId() {
         console.error('Error getting current user ID:', error);
         return null;
     }
+}
+
+// Animation functions
+function easeInOutCubic(t) {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
+function startPlacingAnimation(x, y, player) {
+    const animation = {
+        x: x,
+        y: y,
+        player: player,
+        startTime: Date.now(),
+        duration: 300,
+        scale: 0,
+        opacity: 0
+    };
+    
+    caroAnimations.placing.push(animation);
+    
+    if (!caroAnimationId) {
+        startAnimationLoop();
+    }
+}
+
+function startWinningAnimation(winningCells) {
+    const now = Date.now();
+    winningCells.forEach((cell, index) => {
+        const animation = {
+            x: cell.x,
+            y: cell.y,
+            startTime: now + index * 100,
+            duration: 800,
+            scale: 1,
+            pulse: 0,
+            color: cell.player === 1 ? '#ff6b6b' : '#4ecdc4'
+        };
+        
+        caroAnimations.winning.push(animation);
+    });
+    
+    if (!caroAnimationId) {
+        startAnimationLoop();
+    }
+}
+
+function updateAnimations(deltaTime) {
+    let hasActiveAnimations = false;
+    
+    caroAnimations.placing = caroAnimations.placing.filter(anim => {
+        const elapsed = Date.now() - anim.startTime;
+        const progress = Math.min(elapsed / anim.duration, 1);
+        
+        if (progress >= 1) {
+            return false;
+        }
+        
+        anim.scale = easeInOutCubic(progress);
+        anim.opacity = easeInOutCubic(progress);
+        hasActiveAnimations = true;
+        return true;
+    });
+    
+    caroAnimations.winning = caroAnimations.winning.filter(anim => {
+        const elapsed = Date.now() - anim.startTime;
+        const progress = Math.min(elapsed / anim.duration, 1);
+        
+        if (progress >= 1) {
+            return false;
+        }
+        
+        anim.pulse = Math.sin(progress * Math.PI * 4) * 0.3 + 1;
+        anim.scale = easeInOutCubic(progress) * anim.pulse;
+        hasActiveAnimations = true;
+        return true;
+    });
+    
+    if (hasActiveAnimations) {
+        renderCaroBoard();
+    }
+    
+    return hasActiveAnimations;
+}
+
+function startAnimationLoop() {
+    if (caroAnimationId) return;
+    
+    let lastTime = Date.now();
+    
+    function animate() {
+        const currentTime = Date.now();
+        const deltaTime = currentTime - lastTime;
+        lastTime = currentTime;
+        
+        const hasAnimations = updateAnimations(deltaTime);
+        
+        if (hasAnimations) {
+            caroAnimationId = requestAnimationFrame(animate);
+        } else {
+            caroAnimationId = null;
+        }
+    }
+    
+    caroAnimationId = requestAnimationFrame(animate);
 }
 
 // Status display functions
@@ -302,6 +415,16 @@ function resetCaroGame() {
         leaveRoomBtn.style.display = 'none';
     }
     
+    // Cleanup animations
+    if (caroAnimationId) {
+        cancelAnimationFrame(caroAnimationId);
+        caroAnimationId = null;
+    }
+    
+    caroAnimations.placing = [];
+    caroAnimations.winning = [];
+    caroAnimations.pulse = null;
+    
     // Reset game state
     caroGameState = null;
     currentCaroGameId = null;
@@ -420,9 +543,17 @@ async function makeCaroMove(x, y) {
 function makeLocalCaroMove(x, y) {
     caroGameState.board[x][y] = caroGameState.currentPlayer;
     
+    startPlacingAnimation(x, y, caroGameState.currentPlayer);
+    
     // Check for win
     const winner = checkCaroWinner(x, y);
     if (winner) {
+        const winningLine = getWinningLine(x, y);
+        caroGameState.winningLine = winningLine; // Store winning line for drawing
+        setTimeout(() => {
+            startWinningAnimation(winningLine);
+        }, 300);
+        
         caroGameState.winner = winner;
         caroGameState.isGameOver = true;
         stopWaitingForOpponent();
@@ -442,9 +573,17 @@ function makeAICaroMove(x, y) {
     // Human move
     caroGameState.board[x][y] = caroGameState.currentPlayer;
     
+    startPlacingAnimation(x, y, caroGameState.currentPlayer);
+    
     // Check for win
     const winner = checkCaroWinner(x, y);
     if (winner) {
+        const winningLine = getWinningLine(x, y);
+        caroGameState.winningLine = winningLine; // Store winning line for drawing
+        setTimeout(() => {
+            startWinningAnimation(winningLine);
+        }, 300);
+        
         caroGameState.winner = winner;
         caroGameState.isGameOver = true;
         stopWaitingForOpponent();
@@ -479,9 +618,17 @@ function makeAICaroMove(x, y) {
 function makeAIMove(x, y) {
     caroGameState.board[x][y] = 2; // AI is always player 2
     
+    startPlacingAnimation(x, y, 2);
+    
     // Check for win
     const winner = checkCaroWinner(x, y);
     if (winner) {
+        const winningLine = getWinningLine(x, y);
+        caroGameState.winningLine = winningLine; // Store winning line for drawing
+        setTimeout(() => {
+            startWinningAnimation(winningLine);
+        }, 300);
+        
         caroGameState.winner = winner;
         caroGameState.isGameOver = true;
         stopWaitingForOpponent();
@@ -581,66 +728,49 @@ async function makeOnlineCaroMove(x, y) {
 
 // Check winner
 function checkCaroWinner(x, y) {
+    const winningLine = getWinningLine(x, y);
+    return winningLine ? winningLine[0].player : null;
+}
+
+function getWinningLine(x, y) {
     const player = caroGameState.board[x][y];
     const WIN_LENGTH = 5;
     
-    console.log(`🔍 Checking winner for player ${player} at (${x}, ${y})`);
+    const directions = [
+        { dx: 1, dy: 0 },   // horizontal
+        { dx: 0, dy: 1 },   // vertical
+        { dx: 1, dy: 1 },   // diagonal \
+        { dx: 1, dy: -1 }   // diagonal /
+    ];
     
-    // Debug: Print board around the move
-    console.log('📋 Board state around move:');
-    for (let i = Math.max(0, x-2); i <= Math.min(14, x+2); i++) {
-        let row = '';
-        for (let j = Math.max(0, y-2); j <= Math.min(14, y+2); j++) {
-            if (i === x && j === y) {
-                row += `[${caroGameState.board[i][j]}]`;
+    for (const dir of directions) {
+        const line = [{ x, y, player }];
+        
+        for (let i = 1; i < WIN_LENGTH; i++) {
+            const nx = x + i * dir.dx;
+            const ny = y + i * dir.dy;
+            if (nx >= 0 && nx < 15 && ny >= 0 && ny < 15 && caroGameState.board[nx][ny] === player) {
+                line.push({ x: nx, y: ny, player });
             } else {
-                row += ` ${caroGameState.board[i][j]} `;
+                break;
             }
         }
-        console.log(`Row ${i}: ${row}`);
+        
+        for (let i = 1; i < WIN_LENGTH; i++) {
+            const nx = x - i * dir.dx;
+            const ny = y - i * dir.dy;
+            if (nx >= 0 && nx < 15 && ny >= 0 && ny < 15 && caroGameState.board[nx][ny] === player) {
+                line.unshift({ x: nx, y: ny, player });
+            } else {
+                break;
+            }
+        }
+        
+        if (line.length >= WIN_LENGTH) {
+            return line.slice(0, WIN_LENGTH);
+        }
     }
     
-    // Check horizontal
-    let count = 1;
-    for (let i = x - 1; i >= 0 && caroGameState.board[i][y] === player; i--) count++;
-    for (let i = x + 1; i < 15 && caroGameState.board[i][y] === player; i++) count++;
-    console.log(`📏 Horizontal count: ${count}`);
-    if (count >= WIN_LENGTH) {
-        console.log(`🎉 Player ${player} wins horizontally!`);
-        return player;
-    }
-
-    // Check vertical
-    count = 1;
-    for (let i = y - 1; i >= 0 && caroGameState.board[x][i] === player; i--) count++;
-    for (let i = y + 1; i < 15 && caroGameState.board[x][i] === player; i++) count++;
-    console.log(`📏 Vertical count: ${count}`);
-    if (count >= WIN_LENGTH) {
-        console.log(`🎉 Player ${player} wins vertically!`);
-        return player;
-    }
-
-    // Check diagonal (top-left to bottom-right)
-    count = 1;
-    for (let i = 1; x - i >= 0 && y - i >= 0 && caroGameState.board[x - i][y - i] === player; i++) count++;
-    for (let i = 1; x + i < 15 && y + i < 15 && caroGameState.board[x + i][y + i] === player; i++) count++;
-    console.log(`📏 Diagonal (\) count: ${count}`);
-    if (count >= WIN_LENGTH) {
-        console.log(`🎉 Player ${player} wins diagonally!`);
-        return player;
-    }
-
-    // Check diagonal (top-right to bottom-left)
-    count = 1;
-    for (let i = 1; x - i >= 0 && y + i < 15 && caroGameState.board[x - i][y + i] === player; i++) count++;
-    for (let i = 1; x + i < 15 && y - i >= 0 && caroGameState.board[x + i][y - i] === player; i++) count++;
-    console.log(`📏 Diagonal (/) count: ${count}`);
-    if (count >= WIN_LENGTH) {
-        console.log(`🎉 Player ${player} wins diagonally!`);
-        return player;
-    }
-
-    console.log(`❌ No winner found for player ${player}`);
     return null;
 }
 
@@ -921,7 +1051,7 @@ function renderCaroBoard() {
         ctx.stroke();
     }
 
-    // Draw pieces
+    // Draw pieces with animation
     for (let row = 0; row < boardSize; row++) {
         for (let col = 0; col < boardSize; col++) {
             const piece = caroGameState.board[row][col];
@@ -929,15 +1059,30 @@ function renderCaroBoard() {
                 const x = col * cellSize + cellSize / 2;
                 const y = row * cellSize + cellSize / 2;
                 
-                ctx.beginPath();
-                ctx.arc(x, y, cellSize / 2 - 5, 0, 2 * Math.PI);
+                const placingAnim = caroAnimations.placing.find(anim => anim.x === col && anim.y === row);
+                const winningAnim = caroAnimations.winning.find(anim => anim.x === col && anim.y === row);
                 
-                if (piece === 1) {
-                    ctx.fillStyle = '#ff6b6b'; // Red for X
-                } else {
-                    ctx.fillStyle = '#4ecdc4'; // Blue for O
+                let scale = 1;
+                let opacity = 1;
+                let fillColor = piece === 1 ? '#ff6b6b' : '#4ecdc4';
+                
+                if (placingAnim) {
+                    scale = Math.max(0.1, Math.min(2, placingAnim.scale));
+                    opacity = Math.max(0.1, Math.min(1, placingAnim.opacity));
+                } else if (winningAnim) {
+                    scale = Math.max(0.1, Math.min(3, winningAnim.scale));
+                    fillColor = winningAnim.color || fillColor;
                 }
                 
+                ctx.save();
+                ctx.globalAlpha = opacity;
+                
+                // Ensure radius is always positive
+                const radius = Math.max(1, (cellSize / 2 - 5) * scale);
+                
+                ctx.beginPath();
+                ctx.arc(x, y, radius, 0, 2 * Math.PI);
+                ctx.fillStyle = fillColor;
                 ctx.fill();
                 ctx.strokeStyle = '#333';
                 ctx.lineWidth = 2;
@@ -945,13 +1090,73 @@ function renderCaroBoard() {
                 
                 // Draw X or O
                 ctx.fillStyle = '#fff';
-                ctx.font = `${cellSize / 2}px Arial`;
+                const fontSize = Math.max(8, (cellSize / 2) * scale);
+                ctx.font = `${fontSize}px Arial`;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.fillText(piece === 1 ? 'X' : 'O', x, y);
+                
+                ctx.restore();
             }
         }
     }
+    
+    // Draw winning line if game is over and there's a winner
+    if (caroGameState && caroGameState.isGameOver && caroGameState.winner) {
+        drawWinningLine();
+    }
+}
+
+// Draw winning line
+function drawWinningLine() {
+    if (!caroGameState || !caroGameState.winner) return;
+    
+    // Use stored winning line if available
+    let winningLine = caroGameState.winningLine;
+    
+    // If no stored winning line, find it manually
+    if (!winningLine) {
+        for (let row = 0; row < 15; row++) {
+            for (let col = 0; col < 15; col++) {
+                if (caroGameState.board[row][col] === caroGameState.winner) {
+                    const line = getWinningLine(row, col);
+                    if (line && line.length >= 5) {
+                        winningLine = line;
+                        break;
+                    }
+                }
+            }
+            if (winningLine) break;
+        }
+    }
+    
+    if (!winningLine) return;
+    
+    const canvas = document.getElementById('caroCanvas');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    const cellSize = 40;
+    
+    // Draw winning line
+    ctx.save();
+    ctx.strokeStyle = '#ffd700'; // Gold color for winning line
+    ctx.lineWidth = 6;
+    ctx.lineCap = 'round';
+    ctx.shadowColor = 'rgba(255, 215, 0, 0.8)';
+    ctx.shadowBlur = 10;
+    
+    const startX = winningLine[0].y * cellSize + cellSize / 2;
+    const startY = winningLine[0].x * cellSize + cellSize / 2;
+    const endX = winningLine[winningLine.length - 1].y * cellSize + cellSize / 2;
+    const endY = winningLine[winningLine.length - 1].x * cellSize + cellSize / 2;
+    
+    ctx.beginPath();
+    ctx.moveTo(startX, startY);
+    ctx.lineTo(endX, endY);
+    ctx.stroke();
+    
+    ctx.restore();
 }
 
 // Update display
@@ -1013,6 +1218,26 @@ function updateCaroDisplay() {
     }
 }
 
+// Canvas hover handler
+function handleCaroCanvasHover(event) {
+    if (!caroGameState || caroGameState.isGameOver) return;
+    
+    const canvas = event.target;
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    
+    const cellSize = 40;
+    const col = Math.floor(x / cellSize);
+    const row = Math.floor(y / cellSize);
+    
+    if (row >= 0 && row < 15 && col >= 0 && col < 15) {
+        canvas.style.cursor = caroGameState.board[row][col] === 0 ? 'pointer' : 'not-allowed';
+    } else {
+        canvas.style.cursor = 'default';
+    }
+}
+
 // Canvas click handler
 function handleCaroCanvasClick(event) {
     if (!caroGameState || caroGameState.isGameOver) return;
@@ -1069,6 +1294,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const canvas = document.getElementById('caroCanvas');
     if (canvas) {
         canvas.addEventListener('click', handleCaroCanvasClick);
+        canvas.addEventListener('mousemove', handleCaroCanvasHover);
     }
 
     const newCaroGameBtn = document.getElementById('newCaroGameBtn');
